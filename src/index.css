@@ -8,6 +8,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
 }
 
 *,
@@ -20,6 +21,25 @@ body {
   margin: 0;
   min-height: 100vh;
   background-color: var(--surface-ground);
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --primary-color: #7cb7ff;
+  --primary-color-text: #0b1220;
+  --surface-ground: #0b1220;
+  --surface-section: #0f172a;
+  --surface-card: #111827;
+  --surface-overlay: #111827;
+  --surface-border: #1f2937;
+  --surface-hover: #1b2537;
+  --surface-100: #131c2d;
+  --surface-200: #1b2537;
+  --text-color: #e5e7eb;
+  --text-color-secondary: #94a3b8;
+  --focus-ring: 0 0 0 0.15rem rgba(124, 183, 255, 0.35);
+  background-color: var(--surface-ground);
+  color: var(--text-color);
 }
 
 a {
