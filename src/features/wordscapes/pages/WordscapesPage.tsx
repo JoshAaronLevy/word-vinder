@@ -30,7 +30,7 @@ function WordscapesPage() {
     <section className="page">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Wordscapes helper</p>
+          <p className="eyebrow">Wordscapes Vinder (Finder)</p>
           <h1>Filter words by letters and length</h1>
           <p className="muted">
             Choose 4–8 letters, optionally pick a target word length, and instantly see valid

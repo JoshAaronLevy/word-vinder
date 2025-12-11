@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.5rem;
+  padding: 0.25rem 1.5rem;
   background-color: var(--surface-card);
   border-bottom: 1px solid var(--surface-border);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
@@ -42,12 +42,15 @@
   letter-spacing: 0.02em;
 }
 
-.brand-icon {
-  font-size: 1.2rem;
+.brand-logo {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
 }
 
 .brand-name {
-  font-size: 1.05rem;
+  font-size: 1.25rem;
+  color: #333333;
 }
 
 .nav-links {

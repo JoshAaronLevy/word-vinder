@@ -26,7 +26,7 @@ function WordlePage() {
     <section className="page">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Wordle helper</p>
+          <p className="eyebrow">Wordle Vinder (Finder)</p>
           <h1>Track attempts and narrow 5-letter answers</h1>
           <p className="muted">
             Enter each guess with tile states. Suggestions update after every row. Up to six

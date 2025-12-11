@@ -69,7 +69,7 @@ function QuartilesPage() {
     <section className="page">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Quartiles helper</p>
+          <p className="eyebrow">Quartiles Vinder (Finder)</p>
           <h1>Select tiles and discover 2–4 letter words</h1>
           <p className="muted">
             Add tile text, select any tiles on the grid, and analyze to find valid words. Save or

@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import wordVinderLogo from '../../assets/Word-Vinder-Logo.png'
 import { navLinks } from '../routes'
 
 function Layout() {
@@ -6,7 +7,7 @@ function Layout() {
     <div className="layout">
       <header className="app-header">
         <NavLink to="/" className="brand">
-          <span className="brand-icon pi pi-compass" aria-hidden />
+          <img src={wordVinderLogo} alt="Word Vinder logo" className="brand-logo" />
           <span className="brand-name">Word Vinder</span>
         </NavLink>
 

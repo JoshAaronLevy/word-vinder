@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from 'primereact/button'
 import { Card } from 'primereact/card'
-import { Tag } from 'primereact/tag'
 
 const helpers = [
   {
@@ -31,16 +30,11 @@ function HomePage() {
     <section className="page">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Word Vinder</p>
-          <h1>Pick a helper to launch</h1>
+          <p className="eyebrow">The Ultimate Word Game Assistant</p>
+          <h1>Game Type</h1>
           <p className="muted">
-            Three solvers in one place: Wordle, Quartiles, and Wordscapes. Routes and PrimeReact
-            styling are ready for feature work.
+            Select a game type in order to launch the word finder for that game.
           </p>
-        </div>
-        <div className="header-tags">
-          <Tag value="PrimeReact" icon="pi pi-prime" severity="info" />
-          <Tag value="React Router" icon="pi pi-directions" severity="info" />
         </div>
       </div>
 
