@@ -168,6 +168,104 @@
   gap: 0.5rem;
 }
 
+/* Wordle helper */
+.wordle-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.wordle-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wordle-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.wordle-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.letter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.letter-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+}
+
+.attempts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.attempt-row {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.attempt-tag {
+  min-width: 48px;
+  text-align: center;
+}
+
+.attempts-footer {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.suggestions-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.suggestions-grid {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.suggestion-pill {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: var(--surface-100);
+  border: 1px solid var(--surface-border);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.link-button {
+  margin-top: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
