@@ -19,12 +19,22 @@ function Board({ tiles, selected, onToggle }: BoardProps) {
             const value = tiles[index]
             const isSelected = selected.includes(index)
 
+            const toggle = () => value && onToggle(index)
+
             return (
               <button
                 key={col}
                 type="button"
                 className={classNames('quartiles-tile', { selected: isSelected, empty: !value })}
-                onClick={() => value && onToggle(index)}
+                onClick={toggle}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    toggle()
+                  }
+                }}
+                disabled={!value}
+                aria-disabled={!value}
                 aria-pressed={isSelected}
                 aria-label={value ? `Tile ${index + 1}: ${value}` : `Empty tile ${index + 1}`}
               >
