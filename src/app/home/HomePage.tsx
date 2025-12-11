@@ -6,24 +6,21 @@ import { Tag } from 'primereact/tag'
 const helpers = [
   {
     key: 'wordle',
-    title: 'Wordle helper',
+    title: 'Wordle',
     description: 'Enter your attempts and tile states to narrow down 5-letter answers.',
-    path: '/wordle-helper',
-    chip: 'Stage 2: logic + UI',
+    path: '/wordle',
   },
   {
     key: 'quartiles',
-    title: 'Quartiles helper',
+    title: 'Quartiles',
     description: 'Select tiles, generate 2–4 letter combinations, and page through results.',
-    path: '/quartiles-helper',
-    chip: 'Stage 3: logic + UI',
+    path: '/quartiles',
   },
   {
     key: 'wordscapes',
-    title: 'Wordscapes helper',
+    title: 'Wordscapes',
     description: 'Enter 4–8 letters and an optional length to find valid words fast.',
-    path: '/wordscapes-helper',
-    chip: 'Stage 4: logic + UI',
+    path: '/wordscapes',
   },
 ]
 
@@ -52,7 +49,6 @@ function HomePage() {
           <Card key={helper.key} className="tile-card" title={helper.title}>
             <p className="muted">{helper.description}</p>
             <div className="tile-footer">
-              <Tag value={helper.chip} severity="secondary" />
               <Button
                 label="Open"
                 icon="pi pi-arrow-right"
