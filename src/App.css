@@ -422,6 +422,135 @@
   }
 }
 
+/* Wordscapes helper */
+.wordscapes-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.wordscapes-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wordscapes-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.wordscapes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.letters-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.letters-header h4 {
+  margin: 0;
+}
+
+.letters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.letter-input {
+  display: flex;
+}
+
+.wordscapes-placeholder,
+.wordscapes-empty,
+.wordscapes-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.results-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.results-summary.compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.summary-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.summary-label {
+  color: var(--text-color-secondary);
+}
+
+.letters-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.results-scroll {
+  max-height: 520px;
+  overflow: auto;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background-color: var(--surface-card);
+}
+
+.result-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.result-group:last-child {
+  border-bottom: none;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group-length {
+  font-weight: 700;
+}
+
+.word-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.35rem;
+  padding-left: 1.1rem;
+  margin: 0;
+}
+
+.word-list-item {
+  list-style: disc;
+}
+
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;

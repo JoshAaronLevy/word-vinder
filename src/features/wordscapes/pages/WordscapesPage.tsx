@@ -1,27 +1,63 @@
-import { Button } from 'primereact/button'
-import { Card } from 'primereact/card'
+import { useMemo, useState } from 'react'
+import { Tag } from 'primereact/tag'
 import { useNavigate } from 'react-router-dom'
+import ResultsPanel from '../components/ResultsPanel'
+import WordFinderForm from '../components/WordFinderForm'
+import { findMatchingWords } from '../logic/wordSearch'
+import type { WordFinderSubmission, WordGroup } from '../types'
 
 function WordscapesPage() {
+  const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
+  const [results, setResults] = useState<WordGroup[]>([])
   const navigate = useNavigate()
+
+  const totalCount = useMemo(
+    () => results.reduce((sum, group) => sum + group.words.length, 0),
+    [results],
+  )
+
+  const handleSubmit = (payload: WordFinderSubmission) => {
+    setSubmission(payload)
+    setResults(findMatchingWords(payload))
+  }
+
+  const handleReset = () => {
+    setSubmission(null)
+    setResults([])
+  }
 
   return (
     <section className="page">
-      <Card className="stub-card" title="Wordscapes helper">
-        <p className="muted">
-          Stage 4 will include the Word Trip-style letter inputs, optional word-length filter, and
-          grouped results using the migrated word search logic.
-        </p>
-        <div className="actions">
-          <Button
-            label="Back home"
-            icon="pi pi-arrow-left"
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">Wordscapes helper</p>
+          <h1>Filter words by letters and length</h1>
+          <p className="muted">
+            Choose 4–8 letters, optionally pick a target word length, and instantly see valid
+            matches grouped by length.
+          </p>
+        </div>
+        <div className="header-tags">
+          <Tag value={`Total matches: ${totalCount}`} severity="info" />
+          <Tag
+            value={submission?.wordLength ? `${submission.wordLength}-letter focus` : 'All lengths'}
             severity="secondary"
-            outlined
-            onClick={() => navigate('/')}
           />
         </div>
-      </Card>
+      </div>
+
+      <div className="wordscapes-layout">
+        <div className="wordscapes-column">
+          <WordFinderForm onSubmit={handleSubmit} onReset={handleReset} />
+          <button className="link-button" type="button" onClick={() => navigate('/')}>
+            <i className="pi pi-arrow-left" aria-hidden />
+            Back to home
+          </button>
+        </div>
+        <div className="wordscapes-column">
+          <ResultsPanel submission={submission} results={results} />
+        </div>
+      </div>
     </section>
   )
 }
