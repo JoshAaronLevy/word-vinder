@@ -4,18 +4,28 @@ import { Tag } from 'primereact/tag'
 
 type SuggestionsPanelProps = {
   suggestions: string[]
+  hasAttempts: boolean
 }
 
-function SuggestionsPanel({ suggestions }: SuggestionsPanelProps) {
+function SuggestionsPanel({ suggestions, hasAttempts }: SuggestionsPanelProps) {
   const count = suggestions.length
+  const hasMatches = count > 0
+  console.log("suggestions: ", suggestions)
 
   return (
     <Card className="wordle-card" title="Possible words">
-      <div className="suggestions-summary">
-        <Tag value={`${count} matches`} severity="info" />
-      </div>
+      {hasAttempts && (
+        <div className="suggestions-summary">
+          <Tag value={`${count} matches`} severity="info" />
+        </div>
+      )}
 
-      {count === 0 ? (
+      {!hasAttempts ? (
+        <Message
+          severity="info"
+          text="Enter at least one attempt to generate possible matches."
+        />
+      ) : !hasMatches ? (
         <Message
           severity="warn"
           text="No matches yet. Add or adjust attempts to refine suggestions."

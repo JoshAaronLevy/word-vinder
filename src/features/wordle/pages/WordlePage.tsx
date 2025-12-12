@@ -13,7 +13,12 @@ function WordlePage() {
   const [attempts, setAttempts] = useState<Attempt[]>([])
   const navigate = useNavigate()
 
-  const suggestions = useMemo(() => suggestWords(attempts), [attempts])
+  const hasAttempts = attempts.length > 0
+
+  const suggestions = useMemo(
+    () => (hasAttempts ? suggestWords(attempts) : []),
+    [attempts, hasAttempts],
+  )
 
   const handleAddAttempt = (attempt: Attempt) => {
     if (attempts.length >= MAX_ATTEMPTS) return
@@ -45,7 +50,7 @@ function WordlePage() {
           <AttemptsPanel attempts={attempts} onReset={handleReset} maxAttempts={MAX_ATTEMPTS} />
         </div>
         <div className="wordle-column">
-          <SuggestionsPanel suggestions={suggestions} />
+          <SuggestionsPanel suggestions={suggestions} hasAttempts={hasAttempts} />
           <button className="link-button" type="button" onClick={() => navigate('/')}>
             <i className="pi pi-arrow-left" aria-hidden />
             Back to home

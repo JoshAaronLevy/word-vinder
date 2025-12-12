@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { Button } from 'primereact/button'
 import { Card } from 'primereact/card'
+
+import WordleImage from '../../assets/Wordle.png'
+import QuartilesImage from '../../assets/Quartiles.png'
+import WordscapesImage from '../../assets/Wordscapes.png'
 
 const helpers = [
   {
@@ -8,23 +11,30 @@ const helpers = [
     title: 'Wordle',
     description: 'Enter your attempts and tile states to narrow down 5-letter answers.',
     path: '/wordle',
-  },
-  {
-    key: 'quartiles',
-    title: 'Quartiles',
-    description: 'Select tiles, generate 2–4 letter combinations, and page through results.',
-    path: '/quartiles',
+    image: WordleImage,
+    imageAlt: 'Wordle solver helper interface preview',
   },
   {
     key: 'wordscapes',
     title: 'Wordscapes',
     description: 'Enter 4–8 letters and an optional length to find valid words fast.',
     path: '/wordscapes',
+    image: WordscapesImage,
+    imageAlt: 'Wordscapes solver example letters',
+  },
+  {
+    key: 'quartiles',
+    title: 'Quartiles',
+    description: 'Select tiles, generate 2–4 letter combinations, and page through results.',
+    path: '/quartiles',
+    image: QuartilesImage,
+    imageAlt: 'Quartiles helper tiles example',
   },
 ]
 
 function HomePage() {
   const navigate = useNavigate()
+  const handleNavigate = (path: string) => navigate(path)
 
   return (
     <section className="page">
@@ -40,14 +50,21 @@ function HomePage() {
 
       <div className="tile-grid">
         {helpers.map((helper) => (
-          <Card key={helper.key} className="tile-card" title={helper.title}>
-            <p className="muted">{helper.description}</p>
-            <div className="tile-footer">
-              <Button
-                label="Open"
-                icon="pi pi-arrow-right"
-                onClick={() => navigate(helper.path)}
-              />
+          <Card
+            key={helper.key}
+            className="tile-card"
+            title={helper.title}
+            onClick={() => handleNavigate(helper.path)}
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                handleNavigate(helper.path)
+              }
+            }}
+          >
+            <div className="tile-illustration">
+              <img src={helper.image} alt={helper.imageAlt} loading="lazy" />
             </div>
           </Card>
         ))}
