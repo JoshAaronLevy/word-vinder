@@ -1,7 +1,7 @@
 export type WordFinderSubmission = {
   letters: string[]
   letterCount: number
-  wordLength?: number
+  wordLengths?: number[]
 }
 
 export type WordGroup = {

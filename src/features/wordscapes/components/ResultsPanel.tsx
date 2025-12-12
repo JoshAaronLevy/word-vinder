@@ -12,6 +12,13 @@ function ResultsPanel({ submission, results }: ResultsPanelProps) {
   const hasSubmission = !!submission
   const hasResults = results.length > 0
   const totalCount = results.reduce((sum, group) => sum + group.words.length, 0)
+  const describeTargetLengths = () => {
+    if (!submission?.wordLengths?.length) return 'All (3–8)'
+    const lengths = [...submission.wordLengths].sort((a, b) => a - b)
+    if (lengths.length === 1) return `${lengths[0]} letters`
+    if (lengths.length === 2) return `${lengths[0]} & ${lengths[1]} letters`
+    return `${lengths.slice(0, -1).join(', ')} & ${lengths[lengths.length - 1]} letters`
+  }
 
   return (
     <Card className="wordscapes-card" title="Word results">
@@ -19,9 +26,8 @@ function ResultsPanel({ submission, results }: ResultsPanelProps) {
         <div className="wordscapes-placeholder">
           <Message severity="info" text="Possible words will appear here after you enter letters." />
           <ul className="placeholder-list">
-            <li>Alphabetized matches when a length is chosen</li>
-            <li>Grouped lists (3–8 letters) when no length is chosen</li>
-            <li>Scrollable area for long lists</li>
+            <li>Alphabetized matches grouped by word length</li>
+            <li>Filter to specific lengths or view all 3–8 letter words</li>
           </ul>
         </div>
       )}
@@ -31,10 +37,8 @@ function ResultsPanel({ submission, results }: ResultsPanelProps) {
           <Message severity="warn" text="No matches found for your letters." />
           <div className="results-summary">
             <div className="summary-row">
-              <span className="summary-label">Target length:</span>
-              <span className="summary-value">
-                {submission.wordLength ? `${submission.wordLength} letters` : 'All (3–8)'}
-              </span>
+              <span className="summary-label">Target lengths:</span>
+              <span className="summary-value">{describeTargetLengths()}</span>
             </div>
             <div className="summary-row">
               <span className="summary-label">Letters:</span>
@@ -52,10 +56,8 @@ function ResultsPanel({ submission, results }: ResultsPanelProps) {
         <div className="wordscapes-results" aria-live="polite">
           <div className="results-summary compact">
             <div className="summary-row">
-              <span className="summary-label">Target length:</span>
-              <span className="summary-value">
-                {submission?.wordLength ? `${submission.wordLength} letters` : 'All (3–8)'}
-              </span>
+              <span className="summary-label">Target lengths:</span>
+              <span className="summary-value">{describeTargetLengths()}</span>
             </div>
             <div className="summary-row">
               <span className="summary-label">Total matches:</span>

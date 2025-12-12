@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Tag } from 'primereact/tag'
 import Board from '../components/Board'
 import BoardControls from '../components/BoardControls'
 import SavedBoards from '../components/SavedBoards'
@@ -68,20 +67,16 @@ function QuartilesPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Quartiles Vinder (Finder)</p>
-          <h1>Select tiles and discover 2–4 letter words</h1>
+          <h1>Select tiles and discover words comprised of 1-5 tiles.</h1>
           <p className="muted">
             Add tile text, select any tiles on the grid, and analyze to find valid words. Save or
             load boards to continue later.
           </p>
         </div>
-        <div className="header-tags">
-          <Tag value={`${selected.length} selected`} severity="info" />
-          <Tag value={`${totalPossibilities} permutations`} severity="secondary" />
-        </div>
       </div>
 
       <div className="quartiles-layout">
-        <div className="quartiles-column">
+        <div className="quartiles-board-column">
           <BoardControls
             tiles={tiles}
             selected={selected}
@@ -90,11 +85,12 @@ function QuartilesPage() {
             onClearSelection={handleClearSelection}
             onClearBoard={handleClearBoard}
             disabled={isAnalyzing}
-          />
+          >
+            <Board tiles={tiles} selected={selected} onToggle={handleToggleTile} />
+          </BoardControls>
           <SavedBoards tiles={tiles} onLoad={handleLoadBoard} />
         </div>
-        <div className="quartiles-column">
-          <Board tiles={tiles} selected={selected} onToggle={handleToggleTile} />
+        <div className="quartiles-sidebar">
           <WordList
             words={words}
             totalPossibilities={totalPossibilities}

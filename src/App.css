@@ -478,10 +478,12 @@ html[data-theme='dark'] .menu-link.is-active {
 .quartiles-layout {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 1rem;
+  gap: 1.25rem;
+  align-items: flex-start;
 }
 
-.quartiles-column {
+.quartiles-board-column,
+.quartiles-sidebar {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -491,9 +493,29 @@ html[data-theme='dark'] .menu-link.is-active {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 }
 
+.board-controls-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.board-controls-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.board-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .quartiles-board {
   display: grid;
   gap: 0.75rem;
+  width: 100%;
   background-color: var(--surface-card);
   padding: 1rem;
   border-radius: 12px;
@@ -665,6 +687,22 @@ html[data-theme='dark'] .menu-link.is-active {
   gap: 1rem;
 }
 
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background-color: var(--surface-card);
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .letters-panel {
   display: flex;
   flex-direction: column;
@@ -675,14 +713,35 @@ html[data-theme='dark'] .menu-link.is-active {
   margin: 0;
 }
 
-.letters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 0.5rem;
+.letter-wheel {
+  position: relative;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 2px solid var(--surface-border);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.95), rgba(240, 240, 240, 0.8));
+  box-shadow:
+    inset 0 8px 25px rgba(255, 255, 255, 0.6),
+    inset 0 -8px 20px rgba(0, 0, 0, 0.05),
+    0 15px 25px rgba(0, 0, 0, 0.08);
 }
 
-.letter-input {
+.letter-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
   display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.letter-node input {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: 50%;
+  border: 2px solid var(--surface-border);
 }
 
 .wordscapes-placeholder,
@@ -697,6 +756,10 @@ html[data-theme='dark'] .menu-link.is-active {
   .wordle-layout,
   .quartiles-layout,
   .wordscapes-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .board-controls-layout {
     grid-template-columns: 1fr;
   }
 }

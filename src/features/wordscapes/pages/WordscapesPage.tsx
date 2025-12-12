@@ -24,6 +24,16 @@ function WordscapesPage() {
     setResults([])
   }
 
+  const targetLengthLabel = useMemo(() => {
+    if (!submission?.wordLengths?.length) return 'All lengths'
+    const lengths = [...submission.wordLengths].sort((a, b) => a - b)
+    const label =
+      lengths.length === 1
+        ? `${lengths[0]} letters`
+        : `${lengths.slice(0, -1).join(', ')} and ${lengths[lengths.length - 1]} letters`
+    return `${label} focus`
+  }, [submission])
+
   return (
     <section className="page">
       <div className="page-header">
@@ -31,16 +41,13 @@ function WordscapesPage() {
           <p className="eyebrow">Wordscapes Vinder (Finder)</p>
           <h1>Filter words by letters and length</h1>
           <p className="muted">
-            Choose 4–8 letters, optionally pick a target word length, and instantly see valid
-            matches grouped by length.
+            Choose 4–8 letters, optionally pick target word lengths, and instantly see valid matches
+            grouped by length.
           </p>
         </div>
         <div className="header-tags">
           <Tag value={`Total matches: ${totalCount}`} severity="info" />
-          <Tag
-            value={submission?.wordLength ? `${submission.wordLength}-letter focus` : 'All lengths'}
-            severity="secondary"
-          />
+          <Tag value={targetLengthLabel} severity="secondary" />
         </div>
       </div>
 
