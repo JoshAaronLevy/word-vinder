@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Card } from 'primereact/card'
 import { Message } from 'primereact/message'
 import { Tag } from 'primereact/tag'
+import useMinimumDelay from '../../../shared/hooks/useMinimumDelay'
 
 type SuggestionsPanelProps = {
   suggestions: string[]
@@ -17,6 +19,24 @@ function SuggestionsPanel({
 }: SuggestionsPanelProps) {
   const count = suggestions.length
   const hasMatches = count > 0
+  const [listVersion, setListVersion] = useState(0)
+  const [isRecomputing, setIsRecomputing] = useState(false)
+  const showFiltering = useMinimumDelay(isRecomputing, 200)
+
+  useEffect(() => {
+    if (hasMatches) {
+      setListVersion((prev) => prev + 1)
+    }
+
+    if (!hasAttempts || isDictionaryLoading || dictionaryError) {
+      setIsRecomputing(false)
+      return
+    }
+
+    setIsRecomputing(true)
+    const frame = window.requestAnimationFrame(() => setIsRecomputing(false))
+    return () => window.cancelAnimationFrame(frame)
+  }, [suggestions, hasAttempts, hasMatches, isDictionaryLoading, dictionaryError])
 
   return (
     <Card className="wordle-card" title="Possible words">
@@ -32,6 +52,12 @@ function SuggestionsPanel({
             </div>
           )}
 
+          {showFiltering && !dictionaryError && !isDictionaryLoading && hasAttempts && (
+            <div className="results-progress" aria-live="polite">
+              Filtering possible words…
+            </div>
+          )}
+
           {!hasAttempts ? (
             <Message
               severity="info"
@@ -43,7 +69,11 @@ function SuggestionsPanel({
               text="No matches yet. Add or adjust attempts to refine suggestions."
             />
           ) : (
-            <div className="suggestions-grid" aria-live="polite">
+            <div
+              key={listVersion}
+              className="suggestions-grid suggestions-animate"
+              aria-live="polite"
+            >
               {suggestions.map((word) => (
                 <span key={word} className="suggestion-pill">
                   {word.toUpperCase()}

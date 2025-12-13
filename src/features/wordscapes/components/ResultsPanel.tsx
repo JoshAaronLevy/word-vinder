@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Accordion, AccordionTab } from 'primereact/accordion'
 import type { AccordionTabChangeEvent } from 'primereact/accordion'
 import { Card } from 'primereact/card'
@@ -17,27 +17,40 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
   const hasSubmission = !!submission
   const hasResults = results.length > 0
   const totalCount = results.reduce((sum, group) => sum + group.words.length, 0)
-  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const resultsSignature = useMemo(() => {
+    if (!results.length) return 'empty'
+    return results.map((group) => `${group.length}:${group.words.join('|')}`).join(';')
+  }, [results])
 
-  useEffect(() => {
-    if (!hasResults) {
-      setActiveIndex(null)
-      return
-    }
-    let smallestIndex: number | null = null
-    let smallestLength = Number.POSITIVE_INFINITY
-    results.forEach((group, index) => {
-      if (group.length < smallestLength) {
-        smallestLength = group.length
+  const defaultActiveIndex = useMemo(() => {
+    if (!hasResults) return null
+    let smallestIndex = 0
+    let smallestLength = results[0].length
+    for (let index = 1; index < results.length; index += 1) {
+      if (results[index].length < smallestLength) {
+        smallestLength = results[index].length
         smallestIndex = index
       }
-    })
-    setActiveIndex(smallestIndex)
+    }
+    return smallestIndex
   }, [hasResults, results])
+
+  const [selection, setSelection] = useState<{ index: number | null; signature: string }>({
+    index: null,
+    signature: '',
+  })
+
+  const activeIndex =
+    selection.signature === resultsSignature
+      ? selection.index ?? defaultActiveIndex
+      : defaultActiveIndex
 
   const handleAccordionChange = (event: AccordionTabChangeEvent) => {
     const nextIndex = Array.isArray(event.index) ? event.index[0] : event.index
-    setActiveIndex(typeof nextIndex === 'number' ? nextIndex : null)
+    setSelection({
+      index: typeof nextIndex === 'number' ? nextIndex : null,
+      signature: resultsSignature,
+    })
   }
 
   const describeTargetLengths = () => {
