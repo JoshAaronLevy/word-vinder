@@ -1,7 +1,4 @@
-import { buildWordsByLength, englishWordsUpper } from '../../../shared/dictionary/englishWords'
 import type { WordFinderSubmission, WordGroup } from '../types'
-
-const wordsByLength = buildWordsByLength(englishWordsUpper, 3, 8)
 
 const makeLetterCounts = (letters: string[]) =>
   letters.reduce<Record<string, number>>((map, letter) => {
@@ -19,14 +16,17 @@ const canBuildWord = (word: string, available: Record<string, number>) => {
   return true
 }
 
-export const findMatchingWords = ({
-  letters,
-  wordLength,
-}: Pick<WordFinderSubmission, 'letters' | 'wordLength'>): WordGroup[] => {
+export const findMatchingWords = (
+  {
+    letters,
+    wordLengths,
+  }: Pick<WordFinderSubmission, 'letters' | 'wordLengths'>,
+  wordsByLength: Record<number, string[]>,
+): WordGroup[] => {
   if (!letters.length) return []
 
   const availableCounts = makeLetterCounts(letters)
-  const targetLengths = wordLength ? [wordLength] : [3, 4, 5, 6, 7, 8]
+  const targetLengths = wordLengths?.length ? wordLengths : [3, 4, 5, 6, 7, 8]
 
   const groups: WordGroup[] = []
 

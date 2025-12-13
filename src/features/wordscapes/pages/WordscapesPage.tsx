@@ -1,24 +1,49 @@
-import { useMemo, useState } from 'react'
-import { Tag } from 'primereact/tag'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import ResultsPanel from '../components/ResultsPanel'
 import WordFinderForm from '../components/WordFinderForm'
 import { findMatchingWords } from '../logic/wordSearch'
 import type { WordFinderSubmission, WordGroup } from '../types'
+import { getWordscapesWordsByLength } from '../../../shared/dictionary/englishWords'
 
 function WordscapesPage() {
   const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
   const [results, setResults] = useState<WordGroup[]>([])
-  const navigate = useNavigate()
+  const [wordsByLength, setWordsByLength] = useState<Record<number, string[]> | null>(null)
+  const [isDictionaryLoading, setIsDictionaryLoading] = useState(true)
+  const [dictionaryError, setDictionaryError] = useState<string | null>(null)
 
-  const totalCount = useMemo(
-    () => results.reduce((sum, group) => sum + group.words.length, 0),
-    [results],
-  )
+  useEffect(() => {
+    let isMounted = true
+    getWordscapesWordsByLength()
+      .then((map) => {
+        if (!isMounted) return
+        setWordsByLength(map)
+        setDictionaryError(null)
+      })
+      .catch((error: Error) => {
+        if (!isMounted) return
+        console.error(error)
+        setWordsByLength(null)
+        setDictionaryError('Unable to load dictionary data.')
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsDictionaryLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const handleSubmit = (payload: WordFinderSubmission) => {
     setSubmission(payload)
-    setResults(findMatchingWords(payload))
+    if (!wordsByLength) {
+      setResults([])
+      return
+    }
+    setResults(findMatchingWords(payload, wordsByLength))
   }
 
   const handleReset = () => {
@@ -33,29 +58,27 @@ function WordscapesPage() {
           <p className="eyebrow">Wordscapes Vinder (Finder)</p>
           <h1>Filter words by letters and length</h1>
           <p className="muted">
-            Choose 4–8 letters, optionally pick a target word length, and instantly see valid
-            matches grouped by length.
+            Choose 4–8 letters, optionally pick target word lengths, and instantly see valid matches
+            grouped by length.
           </p>
-        </div>
-        <div className="header-tags">
-          <Tag value={`Total matches: ${totalCount}`} severity="info" />
-          <Tag
-            value={submission?.wordLength ? `${submission.wordLength}-letter focus` : 'All lengths'}
-            severity="secondary"
-          />
         </div>
       </div>
 
       <div className="wordscapes-layout">
         <div className="wordscapes-column">
-          <WordFinderForm onSubmit={handleSubmit} onReset={handleReset} />
-          <button className="link-button" type="button" onClick={() => navigate('/')}>
-            <i className="pi pi-arrow-left" aria-hidden />
-            Back to home
-          </button>
+          <WordFinderForm
+            onSubmit={handleSubmit}
+            onReset={handleReset}
+            isDictionaryReady={!!wordsByLength && !isDictionaryLoading && !dictionaryError}
+          />
         </div>
         <div className="wordscapes-column">
-          <ResultsPanel submission={submission} results={results} />
+          <ResultsPanel
+            submission={submission}
+            results={results}
+            isDictionaryLoading={isDictionaryLoading}
+            dictionaryError={dictionaryError}
+          />
         </div>
       </div>
     </section>
