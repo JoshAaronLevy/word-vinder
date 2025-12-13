@@ -370,6 +370,28 @@ html[data-theme='dark'] .menu-link.is-active {
   font-size: 1rem !important;
 }
 
+.p-multiselect {
+  width: 100%;
+}
+
+.p-multiselect .p-multiselect-label {
+  text-align: left;
+  font-size: 1rem;
+  padding: 0.5rem;
+}
+
+.p-multiselect-panel .p-multiselect-header {
+  display: none;
+  background-color: var(--surface-card);
+  border-bottom: 1px solid var(--surface-border);
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+}
+
+.p-multiselect.p-multiselect-chip .p-multiselect-token {
+  padding: 0rem 0.75rem;
+}
+
 .p-inputtext {
   padding: 0.5rem;
   text-align: center;
@@ -884,31 +906,12 @@ html[data-theme='dark'] .menu-link.is-active {
   gap: 1rem;
 }
 
-.checkbox-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border: 1px solid var(--surface-border);
-  border-radius: 10px;
-  background-color: var(--surface-card);
-}
-
-.checkbox-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .letters-panel {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.letters-panel.inline {
-  margin-top: 0.75rem;
   align-items: center;
+  margin: 0 auto;
 }
 
 .letters-header h4 {
@@ -1004,26 +1007,30 @@ html[data-theme='dark'] .menu-link.is-active {
   background-color: var(--surface-card);
 }
 
-.result-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.5rem 0;
+.results-scroll .p-accordion {
+  border: none;
+  background: transparent;
+}
+
+.results-scroll .p-accordion-tab {
   border-bottom: 1px solid var(--surface-border);
 }
 
-.result-group:last-child {
+.results-scroll .p-accordion-tab:last-child {
   border-bottom: none;
 }
 
-.group-header {
+.results-scroll .p-accordion-header-link {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  color: var(--text-color);
+  padding: 0.35rem 0;
 }
 
-.group-length {
-  font-weight: 700;
+.results-scroll .p-accordion-content {
+  padding: 0.35rem 0 0.75rem;
 }
 
 .word-list {
