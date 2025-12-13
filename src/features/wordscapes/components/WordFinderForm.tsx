@@ -1,10 +1,11 @@
 import { useMemo, useState, type CSSProperties, type FormEvent } from 'react'
 import { Button } from 'primereact/button'
 import { Card } from 'primereact/card'
-import { Checkbox } from 'primereact/checkbox'
 import { Dropdown } from 'primereact/dropdown'
 import { InputText } from 'primereact/inputtext'
 import { Message } from 'primereact/message'
+import { MultiSelect } from 'primereact/multiselect'
+import type { MultiSelectChangeEvent } from 'primereact/multiselect'
 import { toAlphaUpper } from '../../../shared/utils/string'
 import type { WordFinderSubmission } from '../types'
 
@@ -24,7 +25,10 @@ const letterCountOptions: Option[] = [4, 5, 6, 7, 8].map((count) => ({
   value: count,
 }))
 
-const wordLengthOptions: number[] = [3, 4, 5, 6, 7, 8]
+const wordLengthOptions: Option[] = [3, 4, 5, 6, 7, 8].map((len) => ({
+  label: `${len} letters`,
+  value: len,
+}))
 const letterWheelSize = 260
 const letterNodeSize = 58
 const DEFAULT_LETTER_COUNT = 4
@@ -79,24 +83,11 @@ function WordFinderForm({ onSubmit, onReset, isDictionaryReady }: WordFinderForm
     onReset()
   }
 
-  const allLengthsSelected = wordLengths.length === 0
-
-  const toggleWordLength = (length: number) => {
-    setWordLengths((prev) => {
-      if (prev.includes(length)) {
-        return prev.filter((len) => len !== length)
-      }
-      return [...prev, length].sort((a, b) => a - b)
-    })
-  }
-
-  const handleAllLengths = () => {
-    if (!allLengthsSelected) {
-      setWordLengths([])
-    }
-  }
-
   const showLetterError = submitted && lettersIncomplete
+
+  const handleWordLengthsChange = (event: MultiSelectChangeEvent) => {
+    setWordLengths((event.value as number[]) ?? [])
+  }
 
   const letterPositions = useMemo<CSSProperties[]>(() => {
     if (!letterCount) return []
@@ -123,28 +114,21 @@ function WordFinderForm({ onSubmit, onReset, isDictionaryReady }: WordFinderForm
         )}
         <div className="field-grid">
           <div className="field">
-            <label className="label">Target word lengths</label>
-            <div className="checkbox-grid" role="group" aria-label="Target word lengths">
-              <div className="checkbox-option">
-                <Checkbox
-                  inputId="word-length-all"
-                  checked={allLengthsSelected}
-                  onChange={handleAllLengths}
-                />
-                <label htmlFor="word-length-all">All lengths (3–8)</label>
-              </div>
-              {wordLengthOptions.map((len) => (
-                <div key={len} className="checkbox-option">
-                  <Checkbox
-                    inputId={`word-length-${len}`}
-                    value={len}
-                    checked={wordLengths.includes(len)}
-                    onChange={() => toggleWordLength(len)}
-                  />
-                  <label htmlFor={`word-length-${len}`}>{len} letters</label>
-                </div>
-              ))}
-            </div>
+            <label className="label" htmlFor="word-lengths">
+              Target word lengths
+            </label>
+            <MultiSelect
+              id="word-lengths"
+              value={wordLengths}
+              options={wordLengthOptions}
+              onChange={handleWordLengthsChange}
+              optionLabel="label"
+              optionValue="value"
+              display="chip"
+              placeholder="All lengths (3–8)"
+              showClear
+              aria-label="Target word lengths"
+            />
           </div>
           <div className="field">
             <label className="label" htmlFor="letter-count">
@@ -158,34 +142,31 @@ function WordFinderForm({ onSubmit, onReset, isDictionaryReady }: WordFinderForm
               placeholder="Choose 4–8 letters"
               aria-label="Number of available letters"
             />
-            <div className="letters-panel inline">
-              <div className="letters-header">
-                <h4>Enter your letters</h4>
-              </div>
-              <div
-                className="letter-wheel"
-                style={{ width: `${letterWheelSize}px`, height: `${letterWheelSize}px` }}
-              >
-                {letterPositions.map((style, idx) => (
-                  <div key={idx} className="letter-node" style={style}>
-                    <InputText
-                      inputMode="text"
-                      maxLength={1}
-                      value={letters[idx] ?? ''}
-                      onChange={(e) => handleLetterChange(idx, e.target.value)}
-                      aria-label={`Letter ${idx + 1}`}
-                      aria-invalid={showLetterError}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </div>
-                ))}
-              </div>
-              {showLetterError && (
-                <Message severity="warn" text="Fill every letter box with a single letter." />
-              )}
-            </div>
           </div>
+        </div>
+        <div className="letters-panel">
+          <div
+            className="letter-wheel"
+            style={{ width: `${letterWheelSize}px`, height: `${letterWheelSize}px` }}
+          >
+            {letterPositions.map((style, idx) => (
+              <div key={idx} className="letter-node" style={style}>
+                <InputText
+                  inputMode="text"
+                  maxLength={1}
+                  value={letters[idx] ?? ''}
+                  onChange={(e) => handleLetterChange(idx, e.target.value)}
+                  aria-label={`Letter ${idx + 1}`}
+                  aria-invalid={showLetterError}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+            ))}
+          </div>
+          {showLetterError && (
+            <Message severity="warn" text="Fill every letter box with a single letter." />
+          )}
         </div>
 
         <div className="actions">

@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react'
+import { Accordion, AccordionTab } from 'primereact/accordion'
+import type { AccordionTabChangeEvent } from 'primereact/accordion'
 import { Card } from 'primereact/card'
 import { Message } from 'primereact/message'
 import { Tag } from 'primereact/tag'
@@ -14,6 +17,29 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
   const hasSubmission = !!submission
   const hasResults = results.length > 0
   const totalCount = results.reduce((sum, group) => sum + group.words.length, 0)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!hasResults) {
+      setActiveIndex(null)
+      return
+    }
+    let smallestIndex: number | null = null
+    let smallestLength = Number.POSITIVE_INFINITY
+    results.forEach((group, index) => {
+      if (group.length < smallestLength) {
+        smallestLength = group.length
+        smallestIndex = index
+      }
+    })
+    setActiveIndex(smallestIndex)
+  }, [hasResults, results])
+
+  const handleAccordionChange = (event: AccordionTabChangeEvent) => {
+    const nextIndex = Array.isArray(event.index) ? event.index[0] : event.index
+    setActiveIndex(typeof nextIndex === 'number' ? nextIndex : null)
+  }
+
   const describeTargetLengths = () => {
     if (!submission?.wordLengths?.length) return 'All (3–8)'
     const lengths = [...submission.wordLengths].sort((a, b) => a - b)
@@ -73,21 +99,22 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
                 </div>
               </div>
               <div className="results-scroll">
-                {results.map((group) => (
-                  <div key={group.length} className="result-group">
-                    <div className="group-header">
-                      <span className="group-length">{group.length}-letter words</span>
-                      <Tag value={group.words.length} severity="info" />
-                    </div>
-                    <ul className="word-list">
-                      {group.words.map((word) => (
-                        <li key={word} className="word-list-item">
-                          {word}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                <Accordion activeIndex={activeIndex} onTabChange={handleAccordionChange}>
+                  {results.map((group) => (
+                    <AccordionTab
+                      key={group.length}
+                      header={`${group.length}-letter words - ${group.words.length}`}
+                    >
+                      <ul className="word-list">
+                        {group.words.map((word) => (
+                          <li key={word} className="word-list-item">
+                            {word}
+                          </li>
+                        ))}
+                      </ul>
+                    </AccordionTab>
+                  ))}
+                </Accordion>
               </div>
             </div>
           )}
