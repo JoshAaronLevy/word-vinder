@@ -5,8 +5,8 @@ import WordFinderForm from '../components/WordFinderForm'
 import { findMatchingWords } from '../logic/wordSearch'
 import type { WordFinderSubmission, WordGroup } from '../types'
 import { getWordscapesWordsByLength } from '../../../shared/dictionary/englishWords'
-import { getApiBaseUrl } from '../../../services/ping'
 import '../wordscapes.css'
+import { analyzeBoard } from '../../../services/analyzeBoard'
 
 function WordscapesPage() {
   const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
@@ -54,26 +54,29 @@ function WordscapesPage() {
     setResults([])
   }
 
-  const handleScreenshotUpload = (event: { files: File[] }) => {
+  const handleScreenshotUpload = async (event: { files: File[] }) => {
     const [file] = event.files
     if (!file) return
 
-    const formData = new FormData()
-    formData.append('image', file)
-
-    const endpoint = `${getApiBaseUrl()}/api/v1/board/parse-screenshot`
-
-    const requestPreview = {
-      endpoint,
-      method: 'POST',
-      contentType: 'multipart/form-data',
-      fields: {
-        image: { name: file.name, type: file.type, size: file.size },
+    const imagePayload = {
+      kind: 'wordvinder.screenshot.upload.v1',
+      file: {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: file.lastModified,
       },
     }
 
     console.log('[WordVinder] Selected screenshot file:', file)
-    console.log('[WordVinder] Would send request:', requestPreview)
+    console.log('[WordVinder] Image payload:', imagePayload)
+
+    try {
+      const result = await analyzeBoard(file)
+      console.log('[WordVinder] Board analysis response:', result)
+    } catch (err) {
+      console.warn('[WordVinder] Board analysis failed:', err)
+    }
   }
 
   return (
