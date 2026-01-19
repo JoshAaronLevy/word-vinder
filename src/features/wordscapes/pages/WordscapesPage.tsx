@@ -7,6 +7,7 @@ import type { WordFinderSubmission, WordGroup } from '../types'
 import { getWordscapesWordsByLength } from '../../../shared/dictionary/englishWords'
 import '../wordscapes.css'
 import { analyzeBoard } from '../../../services/analyzeBoard'
+import { filterSolvedWords, mapBoardToSubmission } from '../logic/boardAdapter'
 
 function WordscapesPage() {
   const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
@@ -14,6 +15,7 @@ function WordscapesPage() {
   const [wordsByLength, setWordsByLength] = useState<Record<number, string[]> | null>(null)
   const [isDictionaryLoading, setIsDictionaryLoading] = useState(true)
   const [dictionaryError, setDictionaryError] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -40,13 +42,18 @@ function WordscapesPage() {
     }
   }, [])
 
-  const handleSubmit = (payload: WordFinderSubmission) => {
+  const runSuggestions = (payload: WordFinderSubmission, solvedWords: string[] = []) => {
     setSubmission(payload)
     if (!wordsByLength) {
       setResults([])
       return
     }
-    setResults(findMatchingWords(payload, wordsByLength))
+    const matches = findMatchingWords(payload, wordsByLength)
+    setResults(solvedWords.length ? filterSolvedWords(matches, solvedWords) : matches)
+  }
+
+  const handleSubmit = (payload: WordFinderSubmission) => {
+    runSuggestions(payload)
   }
 
   const handleReset = () => {
@@ -57,6 +64,7 @@ function WordscapesPage() {
   const handleScreenshotUpload = async (event: { files: File[] }) => {
     const [file] = event.files
     if (!file) return
+    setSelectedFile(file)
 
     const imagePayload = {
       kind: 'wordvinder.screenshot.upload.v1',
@@ -74,6 +82,10 @@ function WordscapesPage() {
     try {
       const result = await analyzeBoard(file)
       console.log('[WordVinder] Board analysis response:', result)
+      if (result.ok) {
+        const nextSubmission = mapBoardToSubmission(result.board)
+        runSuggestions(nextSubmission, result.board.solvedWords)
+      }
     } catch (err) {
       console.warn('[WordVinder] Board analysis failed:', err)
     }
@@ -95,15 +107,20 @@ function WordscapesPage() {
       <div className="wordscapes-layout">
         <div className="wordscapes-column">
           <div className="wordscapes-upload">
-            <FileUpload
-              mode="basic"
-              customUpload
-              uploadHandler={handleScreenshotUpload}
-              chooseLabel="Upload Screenshot"
-              auto
-              multiple={false}
-              className="p-button-lg"
-            />
+            <div className="wordscapes-upload-stack">
+              <FileUpload
+                mode="basic"
+                customUpload
+                uploadHandler={handleScreenshotUpload}
+                chooseLabel="Upload Screenshot"
+                auto
+                multiple={false}
+                className="p-button-lg"
+              />
+              {selectedFile && (
+                <small className="muted wordscapes-upload-filename">Selected: {selectedFile.name}</small>
+              )}
+            </div>
           </div>
           <WordFinderForm
             onSubmit={handleSubmit}
