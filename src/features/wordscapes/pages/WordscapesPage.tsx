@@ -34,26 +34,26 @@ function WordscapesPage() {
   const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
   const [activeIndex, setActiveIndex] = useState(0);
-  const items = [
+  const analysisSteps = [
     {
       icon: faImage,
       template: (item: any) => itemRenderer(item, 0),
-      label: 'Validating Image'
+      summary: 'Validating Image'
     },
     {
       icon: faWandMagicSparkles,
       template: (item: any) => itemRenderer(item, 1),
-      label: 'Analyzing Board State'
+      summary: 'Analyzing Board State'
     },
     {
       icon: faMagnifyingGlass,
       template: (item: any) => itemRenderer(item, 2),
-      label: 'Identifying Possible Words'
+      summary: 'Identifying Possible Words'
     },
     {
       icon: faDice,
       template: (item: any) => itemRenderer(item, 3),
-      label: 'Finished!'
+      summary: 'Finished! Now go finish that level!'
     }
   ];
 
@@ -286,7 +286,7 @@ function WordscapesPage() {
         className="wordscapes-analysis-dialog"
         onHide={() => setAnalysisDialogVisible(false)}
       >
-        <Steps readOnly={false} model={items} activeIndex={activeIndex} />
+        <Steps readOnly={false} model={analysisSteps} activeIndex={activeIndex} />
         <div className="analysis-steps">
           {/* Step Summary */}
         </div>
