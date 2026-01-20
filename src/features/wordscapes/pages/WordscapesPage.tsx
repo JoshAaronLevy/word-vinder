@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog } from 'primereact/dialog'
 import { FileUpload } from 'primereact/fileupload'
@@ -15,7 +16,8 @@ import { compressImageIfNeeded } from '../../../shared/utils/imageCompression'
 import { Image } from 'primereact/image'
 import { Steps } from 'primereact/steps'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { faCheck, faDice, faImage, faMagnifyingGlass, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 
 function WordscapesPage() {
   const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
@@ -31,22 +33,45 @@ function WordscapesPage() {
   const [suggestionsComplete, setSuggestionsComplete] = useState(false)
   const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeIndex, setActiveIndex] = useState(0);
   const items = [
     {
+      icon: faImage,
+      template: (item: any) => itemRenderer(item, 0),
       label: 'Validating Image'
     },
     {
+      icon: faWandMagicSparkles,
+      template: (item: any) => itemRenderer(item, 1),
       label: 'Analyzing Board State'
     },
     {
+      icon: faMagnifyingGlass,
+      template: (item: any) => itemRenderer(item, 2),
       label: 'Identifying Possible Words'
     },
     {
+      icon: faDice,
+      template: (item: any) => itemRenderer(item, 3),
       label: 'Finished!'
     }
   ];
+
+  const itemRenderer = (item: any, itemIndex: any) => {
+    const isActiveItem = activeIndex === itemIndex;
+    const backgroundColor = isActiveItem ? 'var(--primary-color)' : 'var(--surface-b)';
+    const textColor = isActiveItem ? 'var(--surface-b)' : 'var(--text-color-secondary)';
+
+    return (
+      <span
+        className="inline-flex align-items-center justify-content-center align-items-center border-circle border-primary border-1 h-3rem w-3rem z-1 cursor-pointer"
+        style={{ backgroundColor: backgroundColor, color: textColor, marginTop: '-25px' }}
+        onClick={() => setActiveIndex(itemIndex)}
+      >
+        <FontAwesomeIcon icon={item.icon} />
+      </span>
+    );
+  };
 
   useEffect(() => {
     let isMounted = true
@@ -261,9 +286,9 @@ function WordscapesPage() {
         className="wordscapes-analysis-dialog"
         onHide={() => setAnalysisDialogVisible(false)}
       >
-        <Steps readOnly model={items} activeIndex={activeIndex} />
+        <Steps readOnly={false} model={items} activeIndex={activeIndex} />
         <div className="analysis-steps">
-          <FontAwesomeIcon icon={faMagnifyingGlass} />
+          {/* Step Summary */}
         </div>
       </Dialog>
     </section>

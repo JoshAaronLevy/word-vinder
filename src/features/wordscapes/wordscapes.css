@@ -26,6 +26,10 @@
   font-size: 0.85rem;
 }
 
+.wordscapes-analysis-dialog {
+  width: 80vw;
+}
+
 .wordscapes-page .wordscapes-analysis-dialog {
   width: min(92vw, 420px);
   border-radius: 18px;
@@ -42,6 +46,14 @@
 
 .p-dialog .p-dialog-header .p-dialog-title {
   text-align: center;
+}
+
+.p-steps-item {
+  align-items: center !important;
+}
+
+.p-steps ol {
+  height: 5rem;
 }
 
 .wordscapes-page .wordscapes-analysis-dialog .p-dialog-content {
