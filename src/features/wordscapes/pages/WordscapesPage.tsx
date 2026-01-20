@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog } from 'primereact/dialog'
 import { FileUpload } from 'primereact/fileupload'
+import { Accordion, AccordionTab } from 'primereact/accordion'
+import type { AccordionTabChangeEvent } from 'primereact/accordion'
 import ResultsPanel from '../components/ResultsPanel'
 import WordFinderForm from '../components/WordFinderForm'
 import { findMatchingWords } from '../logic/wordSearch'
@@ -24,6 +26,7 @@ function WordscapesPage() {
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [suggestionsComplete, setSuggestionsComplete] = useState(false)
   const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
+  const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -94,6 +97,11 @@ function WordscapesPage() {
   const handleReset = () => {
     setSubmission(null)
     setResults([])
+  }
+
+  const handleFormAccordionChange = (event: AccordionTabChangeEvent) => {
+    const nextIndex = Array.isArray(event.index) ? event.index[0] ?? null : event.index ?? null
+    setFormAccordionIndex(typeof nextIndex === 'number' ? nextIndex : null)
   }
 
   const handleScreenshotUpload = async (event: { files: File[] }) => {
@@ -206,11 +214,15 @@ function WordscapesPage() {
               )}
             </div>
           </div>
-          <WordFinderForm
-            onSubmit={handleSubmit}
-            onReset={handleReset}
-            isDictionaryReady={!!wordsByLength && !isDictionaryLoading && !dictionaryError}
-          />
+          <Accordion activeIndex={formAccordionIndex} onTabChange={handleFormAccordionChange}>
+            <AccordionTab header="No screenshot? Set up your board manually">
+              <WordFinderForm
+                onSubmit={handleSubmit}
+                onReset={handleReset}
+                isDictionaryReady={!!wordsByLength && !isDictionaryLoading && !dictionaryError}
+              />
+            </AccordionTab>
+          </Accordion>
         </div>
         <div className="wordscapes-column">
           <ResultsPanel
