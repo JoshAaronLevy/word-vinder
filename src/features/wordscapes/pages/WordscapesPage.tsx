@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Dialog } from 'primereact/dialog'
 import { FileUpload } from 'primereact/fileupload'
 import ResultsPanel from '../components/ResultsPanel'
@@ -9,6 +9,8 @@ import { getWordscapesWordsByLength } from '../../../shared/dictionary/englishWo
 import '../wordscapes.css'
 import { analyzeBoard } from '../../../services/analyzeBoard'
 import { filterSolvedWords, mapBoardToSubmission } from '../logic/boardAdapter'
+import { compressImageIfNeeded } from '../../../shared/utils/imageCompression'
+import { Image } from 'primereact/image'
 
 function WordscapesPage() {
   const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
@@ -16,10 +18,12 @@ function WordscapesPage() {
   const [wordsByLength, setWordsByLength] = useState<Record<number, string[]> | null>(null)
   const [isDictionaryLoading, setIsDictionaryLoading] = useState(true)
   const [dictionaryError, setDictionaryError] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [analysisDialogVisible, setAnalysisDialogVisible] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [suggestionsComplete, setSuggestionsComplete] = useState(false)
+  const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -62,6 +66,17 @@ function WordscapesPage() {
     return () => window.clearTimeout(timeout)
   }, [analysisDialogVisible, suggestionsComplete])
 
+  const screenshotPreviewUrl = useMemo(() => {
+    if (!selectedScreenshot) return null
+    return URL.createObjectURL(selectedScreenshot)
+  }, [selectedScreenshot])
+
+  useEffect(() => {
+    return () => {
+      if (screenshotPreviewUrl) URL.revokeObjectURL(screenshotPreviewUrl)
+    }
+  }, [screenshotPreviewUrl])
+
   const runSuggestions = (payload: WordFinderSubmission, solvedWords: string[] = []) => {
     setSubmission(payload)
     if (!wordsByLength) {
@@ -89,6 +104,17 @@ function WordscapesPage() {
     setAnalysisComplete(false)
     setSuggestionsComplete(false)
 
+    // Dify uploads can fail intermittently when upstream proxies/gateways have smaller body limits.
+    // To improve reliability, we opportunistically compress screenshots client-side.
+    const uploadFile = await compressImageIfNeeded(file, {
+      // If the file is already small, leave it alone.
+      thresholdBytes: 2 * 1024 * 1024,
+      // Target under ~1MB when compressing.
+      maxSizeMB: 0.95,
+      // Wordscapes screenshots rarely need full camera resolution.
+      maxWidthOrHeight: 1920,
+    })
+
     const imagePayload = {
       kind: 'wordvinder.screenshot.upload.v1',
       file: {
@@ -100,16 +126,27 @@ function WordscapesPage() {
     }
 
     console.log('[WordVinder] Selected screenshot file:', file)
+
+    if (uploadFile !== file) {
+      console.log('[WordVinder] Compressed screenshot for upload:', {
+        originalBytes: file.size,
+        compressedBytes: uploadFile.size,
+        type: uploadFile.type,
+        name: uploadFile.name,
+      })
+    }
+
     console.log('[WordVinder] Image payload:', imagePayload)
 
     try {
-      const result = await analyzeBoard(file)
+      const result = await analyzeBoard(uploadFile)
       console.log('[WordVinder] Board analysis response:', result)
       if (result.ok) {
         setAnalysisComplete(true)
         const nextSubmission = mapBoardToSubmission(result.board)
         runSuggestions(nextSubmission, result.board.solvedWords)
         setSuggestionsComplete(true)
+        setSelectedScreenshot(file)
       } else {
         setAnalysisDialogVisible(false)
       }
@@ -145,8 +182,27 @@ function WordscapesPage() {
                 multiple={false}
                 className="p-button-lg"
               />
-              {selectedFile && (
-                <small className="muted wordscapes-upload-filename">Selected: {selectedFile.name}</small>
+              {selectedScreenshot && screenshotPreviewUrl && (
+                <div className='uploaded-screenshot'>
+                  <Image
+                    src={screenshotPreviewUrl}
+                    alt={selectedScreenshot.name}
+                    width="110"
+                    preview
+                    imageStyle={{
+                      borderRadius: '10px',
+                      border: '1px solid var(--surface-border)',
+                      objectFit: 'cover',
+                    }}
+                  />
+                  <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                    <div style={{ fontWeight: 600 }}>Selected screenshot</div>
+                    <div>{selectedScreenshot.name}</div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.75 }}>
+                      {(selectedScreenshot.size / (1024 * 1024)).toFixed(2)} MB
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
