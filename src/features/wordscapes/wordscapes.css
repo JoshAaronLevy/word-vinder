@@ -40,6 +40,10 @@
   font-weight: 700;
 }
 
+.p-dialog .p-dialog-header .p-dialog-title {
+  text-align: center;
+}
+
 .wordscapes-page .wordscapes-analysis-dialog .p-dialog-content {
   background: linear-gradient(155deg, #fffdf8 0%, #f9f3ea 100%);
   color: #1f1f1f;

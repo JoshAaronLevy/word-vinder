@@ -13,6 +13,9 @@ import { analyzeBoard } from '../../../services/analyzeBoard'
 import { filterSolvedWords, mapBoardToSubmission } from '../logic/boardAdapter'
 import { compressImageIfNeeded } from '../../../shared/utils/imageCompression'
 import { Image } from 'primereact/image'
+import { Steps } from 'primereact/steps'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 
 function WordscapesPage() {
   const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
@@ -22,11 +25,28 @@ function WordscapesPage() {
   const [dictionaryError, setDictionaryError] = useState<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [analysisDialogVisible, setAnalysisDialogVisible] = useState(false)
+  const [analysisDialogVisible, setAnalysisDialogVisible] = useState(true)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [suggestionsComplete, setSuggestionsComplete] = useState(false)
   const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [activeIndex, setActiveIndex] = useState(0);
+  const items = [
+    {
+      label: 'Validating Image'
+    },
+    {
+      label: 'Analyzing Board State'
+    },
+    {
+      label: 'Identifying Possible Words'
+    },
+    {
+      label: 'Finished!'
+    }
+  ];
 
   useEffect(() => {
     let isMounted = true
@@ -112,14 +132,9 @@ function WordscapesPage() {
     setAnalysisComplete(false)
     setSuggestionsComplete(false)
 
-    // Dify uploads can fail intermittently when upstream proxies/gateways have smaller body limits.
-    // To improve reliability, we opportunistically compress screenshots client-side.
     const uploadFile = await compressImageIfNeeded(file, {
-      // If the file is already small, leave it alone.
       thresholdBytes: 2 * 1024 * 1024,
-      // Target under ~1MB when compressing.
       maxSizeMB: 0.95,
-      // Wordscapes screenshots rarely need full camera resolution.
       maxWidthOrHeight: 1920,
     })
 
@@ -246,12 +261,9 @@ function WordscapesPage() {
         className="wordscapes-analysis-dialog"
         onHide={() => setAnalysisDialogVisible(false)}
       >
+        <Steps readOnly model={items} activeIndex={activeIndex} />
         <div className="analysis-steps">
-          <div className="analysis-step">1. Running AI Board Analysis</div>
-          <div className={`analysis-step${analysisComplete ? '' : ' is-muted'}`}>
-            2. Identifying Possible Words
-          </div>
-          <div className={`analysis-step${suggestionsComplete ? '' : ' is-muted'}`}>3. Finished!</div>
+          <FontAwesomeIcon icon={faMagnifyingGlass} />
         </div>
       </Dialog>
     </section>
