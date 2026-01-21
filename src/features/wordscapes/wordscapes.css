@@ -183,6 +183,57 @@
   animation: wordscapes-results-enter var(--motion-duration-slow) var(--motion-ease-decelerate);
 }
 
+.wordscapes-page .wordscapes-retry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.35rem 0;
+}
+
+.wordscapes-page .wordscapes-retry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.wordscapes-page .wordscapes-retry-label {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.wordscapes-page .wordscapes-retry-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 35%, transparent);
+  background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-card));
+  color: var(--text-color);
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.wordscapes-page .wordscapes-retry-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+.wordscapes-page .wordscapes-retry-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wordscapes-page .wordscapes-retry-hint {
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+}
+
 .wordscapes-page .results-summary {
   display: flex;
   flex-direction: column;

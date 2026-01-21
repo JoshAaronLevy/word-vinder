@@ -30,8 +30,11 @@ function WordscapesPage() {
   const [suggestionsComplete, setSuggestionsComplete] = useState(false)
   const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
+  const [analysisAttempts, setAnalysisAttempts] = useState(0)
+  const [lastSubmissionSource, setLastSubmissionSource] = useState<'upload' | 'manual' | null>(null)
   const [activeIndex, setActiveIndex] = useState(0);
   const stepCount = 4;
+  const maxAnalysisAttempts = 3
   const [completedSteps, setCompletedSteps] = useState<boolean[]>(
     Array(stepCount).fill(false)
   );
@@ -141,19 +144,41 @@ function WordscapesPage() {
     setSubmission(payload)
     if (!wordsByLength) {
       setResults([])
-      return
+      return {
+        dictionaryReady: false,
+        totalMatches: 0,
+        filteredMatches: 0,
+        groupedMatches: [] as Array<{ length: number; count: number }>,
+        solvedWordsCount: solvedWords.length,
+        submission: payload,
+      }
     }
     const matches = findMatchingWords(payload, wordsByLength)
-    setResults(solvedWords.length ? filterSolvedWords(matches, solvedWords) : matches)
+    const filteredMatches = solvedWords.length ? filterSolvedWords(matches, solvedWords) : matches
+    const totalMatches = matches.reduce((sum, group) => sum + group.words.length, 0)
+    const filteredMatchesCount = filteredMatches.reduce((sum, group) => sum + group.words.length, 0)
+    const groupedMatches = filteredMatches.map((group) => ({ length: group.length, count: group.words.length }))
+    setResults(filteredMatches)
+    return {
+      dictionaryReady: true,
+      totalMatches,
+      filteredMatches: filteredMatchesCount,
+      groupedMatches,
+      solvedWordsCount: solvedWords.length,
+      submission: payload,
+    }
   }
 
   const handleSubmit = (payload: WordFinderSubmission) => {
+    setAnalysisAttempts(0)
+    setLastSubmissionSource('manual')
     runSuggestions(payload)
   }
 
   const handleReset = () => {
     setSubmission(null)
     setResults([])
+    setLastSubmissionSource(null)
   }
 
   const handleFormAccordionChange = (event: AccordionTabChangeEvent) => {
@@ -161,26 +186,31 @@ function WordscapesPage() {
     setFormAccordionIndex(typeof nextIndex === 'number' ? nextIndex : null)
   }
 
-  const handleScreenshotUpload = async (event: { files: File[] }) => {
-    const [file] = event.files
-    if (!file) return
+  const incrementAnalysisAttempts = () => {
+    setAnalysisAttempts((prev) => Math.min(prev + 1, maxAnalysisAttempts))
+  }
+
+  const delay = (ms: number) => new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+
+  const runImageAnalysis = async (file: File, options?: { resetResults?: boolean }) => {
     setSelectedFile(file)
     setAnalysisDialogVisible(true)
     setActiveIndex(0)
     setAnalysisComplete(false)
     setSuggestionsComplete(false)
-
-    const delay = (ms: number) => new Promise<void>((resolve) => {
-      window.setTimeout(resolve, ms)
-    })
-
-    const uploadFile = await compressImageIfNeeded(file, {
-      thresholdBytes: 2 * 1024 * 1024,
-      maxSizeMB: 0.95,
-      maxWidthOrHeight: 1920,
-    })
+    if (options?.resetResults) {
+      setSubmission(null)
+      setResults([])
+    }
 
     try {
+      const uploadFile = await compressImageIfNeeded(file, {
+        thresholdBytes: 2 * 1024 * 1024,
+        maxSizeMB: 0.95,
+        maxWidthOrHeight: 1920,
+      })
       await delay(1000)
       setCompletedSteps((prev) => {
         const next = [...prev]
@@ -191,6 +221,7 @@ function WordscapesPage() {
       setActiveIndex(1)
 
       const result = await analyzeBoard(uploadFile)
+      console.log('[WordVinder] Image analysis response:', result)
 
       if (result.ok) {
         setAnalysisComplete(true)
@@ -203,7 +234,8 @@ function WordscapesPage() {
         await delay(1000)
         setActiveIndex(2)
         const nextSubmission = mapBoardToSubmission(result.board)
-        runSuggestions(nextSubmission, result.board.solvedWords)
+        setLastSubmissionSource('upload')
+        const suggestionSummary = runSuggestions(nextSubmission, result.board.solvedWords)
         setSuggestionsComplete(true)
         setSelectedScreenshot(file)
         await delay(1000)
@@ -222,8 +254,17 @@ function WordscapesPage() {
         })
         await delay(900)
         setAnalysisDialogVisible(false)
+        incrementAnalysisAttempts()
+        console.log('[WordVinder] Board analysis complete:', {
+          ...suggestionSummary,
+          boardSummary: result.summary,
+          unsolvedSlots: result.board.unsolvedSlots,
+          imageName: file.name,
+          source: 'upload',
+        })
       } else {
         setAnalysisDialogVisible(false)
+        incrementAnalysisAttempts()
       }
     } catch (err) {
       console.error('[WordVinder] Board analysis failed:', err)
@@ -231,8 +272,25 @@ function WordscapesPage() {
       console.log('selectedFile: ', selectedFile)
       console.log('suggestionsComplete: ', suggestionsComplete)
       setAnalysisDialogVisible(false)
+      incrementAnalysisAttempts()
     }
   }
+
+  const handleScreenshotUpload = async (event: { files: File[] }) => {
+    const [file] = event.files
+    if (!file) return
+    setAnalysisAttempts(0)
+    await runImageAnalysis(file)
+  }
+
+  const handleRetry = async () => {
+    if (!selectedScreenshot || analysisDialogVisible || hasReachedRetryLimit) return
+    await runImageAnalysis(selectedScreenshot, { resetResults: true })
+  }
+
+  const hasReachedRetryLimit = analysisAttempts >= maxAnalysisAttempts
+  const showRetryControls = lastSubmissionSource === 'upload' && !!selectedScreenshot
+  const isRetryDisabled = hasReachedRetryLimit || analysisDialogVisible
 
   return (
     <section className="page wordscapes-page">
@@ -255,9 +313,17 @@ function WordscapesPage() {
                 mode="basic"
                 customUpload
                 uploadHandler={handleScreenshotUpload}
-                chooseLabel="Upload Screenshot"
+                chooseOptions={{
+                  label: 'Upload Screenshot',
+                  icon: (
+                    <span style={{ marginRight: '10px' }}>
+                      <FontAwesomeIcon icon={faImage} />
+                    </span>
+                  ),
+                }}
                 auto
                 multiple={false}
+                onSelect={() => setAnalysisAttempts(0)}
                 className="p-button-lg"
               />
               {selectedScreenshot && screenshotPreviewUrl && (
@@ -300,6 +366,10 @@ function WordscapesPage() {
             results={results}
             isDictionaryLoading={isDictionaryLoading}
             dictionaryError={dictionaryError}
+            showRetryControls={showRetryControls}
+            onRetry={handleRetry}
+            retryDisabled={isRetryDisabled}
+            retryLimitReached={hasReachedRetryLimit}
           />
         </div>
       </div>

@@ -4,6 +4,8 @@ import type { AccordionTabChangeEvent } from 'primereact/accordion'
 import { Card } from 'primereact/card'
 import { Message } from 'primereact/message'
 import { Tag } from 'primereact/tag'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons'
 import type { WordFinderSubmission, WordGroup } from '../types'
 
 type ResultsPanelProps = {
@@ -11,12 +13,25 @@ type ResultsPanelProps = {
   results: WordGroup[]
   isDictionaryLoading: boolean
   dictionaryError: string | null
+  showRetryControls: boolean
+  onRetry: () => void
+  retryDisabled: boolean
+  retryLimitReached: boolean
 }
 
-function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryError }: ResultsPanelProps) {
+function ResultsPanel({
+  submission,
+  results,
+  isDictionaryLoading,
+  dictionaryError,
+  showRetryControls,
+  onRetry,
+  retryDisabled,
+  retryLimitReached,
+}: ResultsPanelProps) {
   const hasSubmission = !!submission
   const hasResults = results.length > 0
-  const totalCount = results.reduce((sum, group) => sum + group.words.length, 0)
+  // const totalCount = results.reduce((sum, group) => sum + group.words.length, 0)
   const resultsSignature = useMemo(() => {
     if (!results.length) return 'empty'
     return results.map((group) => `${group.length}:${group.words.join('|')}`).join(';')
@@ -204,7 +219,7 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
               className={`wordscapes-results${animateResults ? ' wordscapes-results-enter' : ''}`}
               aria-live="polite"
             >
-              <div className="results-summary compact">
+              {/* <div className="results-summary compact">
                 <div className="summary-row">
                   <span className="summary-label">Target lengths:</span>
                   <span className="summary-value">{describeTargetLengths()}</span>
@@ -213,7 +228,7 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
                   <span className="summary-label">Total matches:</span>
                   <Tag value={totalCount} severity="info" />
                 </div>
-              </div>
+              </div> */}
               {toastMessage && (
                 <div
                   className={`wordscapes-toast${toastMessage.tone === 'error' ? ' is-error' : ''}`}
@@ -221,6 +236,27 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
                   aria-live="polite"
                 >
                   {toastMessage.text}
+                </div>
+              )}
+              {showRetryControls && (
+                <div className="wordscapes-retry">
+                  <div className="wordscapes-retry-row">
+                    <span className="wordscapes-retry-label">AI analysis incorrect?</span>
+                    <button
+                      type="button"
+                      className="wordscapes-retry-button"
+                      onClick={onRetry}
+                      disabled={retryDisabled}
+                    >
+                      <FontAwesomeIcon icon={faArrowsRotate} />
+                      Retry
+                    </button>
+                  </div>
+                  {retryLimitReached && (
+                    <div className="wordscapes-retry-hint">
+                      Retry limit reached. Upload a new screenshot to try again.
+                    </div>
+                  )}
                 </div>
               )}
               <div className="results-scroll">
