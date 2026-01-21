@@ -23,7 +23,6 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
   }, [results])
 
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-  const [pinnedWords, setPinnedWords] = useState<string[]>([])
   const [usedWords, setUsedWords] = useState<string[]>([])
   const [animateResults, setAnimateResults] = useState(false)
   const [toastMessage, setToastMessage] = useState<{ text: string; tone: 'success' | 'error' } | null>(
@@ -123,7 +122,6 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
     }
   }
 
-  const pinnedWordSet = useMemo(() => new Set(pinnedWords), [pinnedWords])
   const usedWordSet = useMemo(() => new Set(usedWords), [usedWords])
 
   const handleCopyWord = async (word: string) => {
@@ -150,15 +148,6 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
     }
   }
 
-  const togglePinnedWord = (word: string) => {
-    setPinnedWords((current) => {
-      if (current.includes(word)) {
-        return current.filter((item) => item !== word)
-      }
-      return [...current, word]
-    })
-  }
-
   const toggleUsedWord = (word: string) => {
     setUsedWords((current) => {
       if (current.includes(word)) {
@@ -168,59 +157,9 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
     })
   }
 
-  const removePinnedWord = (word: string) => {
-    setPinnedWords((current) => current.filter((item) => item !== word))
-  }
-
-  const clearPinnedWords = () => {
-    setPinnedWords([])
-  }
-
   useEffect(() => {
     setUsedWords([])
   }, [resultsSignature])
-
-  const renderPinnedPanel = () => (
-    <div className="pinned-panel" aria-live="polite">
-      <div className="pinned-header">
-        <span className="pinned-title">Pinned</span>
-        {pinnedWords.length > 0 && (
-          <button
-            type="button"
-            className="pinned-clear-button focus-ring-target"
-            onClick={clearPinnedWords}
-          >
-            Clear pinned
-          </button>
-        )}
-      </div>
-      {pinnedWords.length === 0 ? (
-        <div className="pinned-empty">Pin words to keep them handy.</div>
-      ) : (
-        <div className="pinned-list">
-          {pinnedWords.map((word) => (
-            <div key={word} className="pinned-pill">
-              <button
-                type="button"
-                className="pinned-word-button focus-ring-target"
-                onClick={() => handleCopyWord(word)}
-              >
-                {word}
-              </button>
-              <button
-                type="button"
-                className="pinned-remove-button focus-ring-target"
-                aria-label={`Unpin ${word}`}
-                onClick={() => removePinnedWord(word)}
-              >
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
 
   return (
     <Card className="wordscapes-card" title="Word results">
@@ -260,8 +199,6 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
             </div>
           )}
 
-          {pinnedWords.length > 0 && !hasResults && renderPinnedPanel()}
-
           {hasResults && (
             <div
               className={`wordscapes-results${animateResults ? ' wordscapes-results-enter' : ''}`}
@@ -277,7 +214,6 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
                   <Tag value={totalCount} severity="info" />
                 </div>
               </div>
-              {renderPinnedPanel()}
               {toastMessage && (
                 <div
                   className={`wordscapes-toast${toastMessage.tone === 'error' ? ' is-error' : ''}`}
@@ -296,7 +232,6 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
                     >
                       <ul className="word-list">
                         {group.words.map((word) => {
-                          const isPinned = pinnedWordSet.has(word)
                           const isUsed = usedWordSet.has(word)
                           return (
                             <li key={word} className="word-list-item">
@@ -312,30 +247,6 @@ function ResultsPanel({ submission, results, isDictionaryLoading, dictionaryErro
                                   }}
                                 >
                                   {word}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`word-pin-button focus-ring-target${isPinned ? ' is-pinned' : ''}`}
-                                  aria-pressed={isPinned}
-                                  aria-label={`${isPinned ? 'Unpin' : 'Pin'} ${word}`}
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    togglePinnedWord(word)
-                                  }}
-                                >
-                                  <svg
-                                    aria-hidden="true"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.7"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <path d="M8.5 3.5h7l.75 6.5a2 2 0 0 1-.93 1.94L13 13.5V18l-2 3v-7.5l-3.32-1.56a2 2 0 0 1-.93-1.94z" />
-                                  </svg>
                                 </button>
                               </div>
                             </li>

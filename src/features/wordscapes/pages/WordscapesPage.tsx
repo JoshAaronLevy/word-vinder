@@ -16,7 +16,6 @@ import { compressImageIfNeeded } from '../../../shared/utils/imageCompression'
 import { Image } from 'primereact/image'
 import { Steps } from 'primereact/steps'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { faCheck, faDice, faImage, faMagnifyingGlass, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 
 function WordscapesPage() {
@@ -25,17 +24,17 @@ function WordscapesPage() {
   const [wordsByLength, setWordsByLength] = useState<Record<number, string[]> | null>(null)
   const [isDictionaryLoading, setIsDictionaryLoading] = useState(true)
   const [dictionaryError, setDictionaryError] = useState<string | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [analysisDialogVisible, setAnalysisDialogVisible] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [analysisComplete, setAnalysisComplete] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [suggestionsComplete, setSuggestionsComplete] = useState(false)
   const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
   const [activeIndex, setActiveIndex] = useState(0);
-  const stepDelayMs = 2000;
+  const stepCount = 4;
+  const [completedSteps, setCompletedSteps] = useState<boolean[]>(
+    Array(stepCount).fill(false)
+  );
   const analysisSteps = [
     {
       icon: faImage,
@@ -61,8 +60,18 @@ function WordscapesPage() {
 
   const itemRenderer = (item: any, itemIndex: any) => {
     const isActiveItem = activeIndex === itemIndex;
-    const backgroundColor = isActiveItem ? 'var(--primary-color)' : 'var(--surface-b)';
-    const textColor = isActiveItem ? 'var(--surface-b)' : 'var(--text-color-secondary)';
+    const isCompleted = completedSteps[itemIndex];
+    const backgroundColor = isCompleted
+      ? 'var(--green-500)'
+      : isActiveItem
+        ? 'var(--primary-color)'
+        : 'var(--surface-b)';
+    const textColor = isCompleted
+      ? 'var(--surface-0)'
+      : isActiveItem
+        ? 'var(--surface-b)'
+        : 'var(--text-color-secondary)';
+    const icon = isCompleted ? faCheck : item.icon;
 
     return (
       <span
@@ -70,7 +79,7 @@ function WordscapesPage() {
         style={{ backgroundColor: backgroundColor, color: textColor, marginTop: '-25px' }}
         onClick={() => setActiveIndex(itemIndex)}
       >
-        <FontAwesomeIcon icon={item.icon} />
+        <FontAwesomeIcon icon={icon} />
       </span>
     );
   };
@@ -107,6 +116,15 @@ function WordscapesPage() {
       setSuggestionsComplete(false)
     }
   }, [analysisDialogVisible])
+
+  useEffect(() => {
+    if (analysisDialogVisible) return
+    const timeout = window.setTimeout(() => {
+      setCompletedSteps(Array(stepCount).fill(false))
+      setActiveIndex(0)
+    }, 500)
+    return () => window.clearTimeout(timeout)
+  }, [analysisDialogVisible, stepCount])
 
   const screenshotPreviewUrl = useMemo(() => {
     if (!selectedScreenshot) return null
@@ -152,8 +170,8 @@ function WordscapesPage() {
     setAnalysisComplete(false)
     setSuggestionsComplete(false)
 
-    const advanceAfterDelay = () => new Promise<void>((resolve) => {
-      window.setTimeout(resolve, stepDelayMs)
+    const delay = (ms: number) => new Promise<void>((resolve) => {
+      window.setTimeout(resolve, ms)
     })
 
     const uploadFile = await compressImageIfNeeded(file, {
@@ -162,52 +180,56 @@ function WordscapesPage() {
       maxWidthOrHeight: 1920,
     })
 
-    const imagePayload = {
-      kind: 'wordvinder.screenshot.upload.v1',
-      file: {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        lastModified: file.lastModified,
-      },
-    }
-
-    console.log('[WordVinder] Selected screenshot file:', file)
-
-    if (uploadFile !== file) {
-      console.log('[WordVinder] Compressed screenshot for upload:', {
-        originalBytes: file.size,
-        compressedBytes: uploadFile.size,
-        type: uploadFile.type,
-        name: uploadFile.name,
-      })
-    }
-
-    console.log('[WordVinder] Image payload:', imagePayload)
-
     try {
-      await advanceAfterDelay()
+      await delay(1000)
+      setCompletedSteps((prev) => {
+        const next = [...prev]
+        next[0] = true
+        return next
+      })
+      await delay(1000)
       setActiveIndex(1)
 
       const result = await analyzeBoard(uploadFile)
-      console.log('[WordVinder] Board analysis response:', result)
+
       if (result.ok) {
         setAnalysisComplete(true)
-        await advanceAfterDelay()
+        await delay(1000)
+        setCompletedSteps((prev) => {
+          const next = [...prev]
+          next[1] = true
+          return next
+        })
+        await delay(1000)
         setActiveIndex(2)
         const nextSubmission = mapBoardToSubmission(result.board)
         runSuggestions(nextSubmission, result.board.solvedWords)
         setSuggestionsComplete(true)
         setSelectedScreenshot(file)
-        await advanceAfterDelay()
+        await delay(1000)
+        setCompletedSteps((prev) => {
+          const next = [...prev]
+          next[2] = true
+          return next
+        })
+        await delay(1000)
         setActiveIndex(3)
-        await advanceAfterDelay()
+        await delay(100)
+        setCompletedSteps((prev) => {
+          const next = [...prev]
+          next[3] = true
+          return next
+        })
+        await delay(900)
         setAnalysisDialogVisible(false)
       } else {
         setAnalysisDialogVisible(false)
       }
     } catch (err) {
-      console.warn('[WordVinder] Board analysis failed:', err)
+      console.error('[WordVinder] Board analysis failed:', err)
+      console.log('analysisComplete: ', analysisComplete)
+      console.log('selectedFile: ', selectedFile)
+      console.log('suggestionsComplete: ', suggestionsComplete)
       setAnalysisDialogVisible(false)
     }
   }
