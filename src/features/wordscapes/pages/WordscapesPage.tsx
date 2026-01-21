@@ -27,13 +27,15 @@ function WordscapesPage() {
   const [dictionaryError, setDictionaryError] = useState<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [analysisDialogVisible, setAnalysisDialogVisible] = useState(true)
+  const [analysisDialogVisible, setAnalysisDialogVisible] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [analysisComplete, setAnalysisComplete] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [suggestionsComplete, setSuggestionsComplete] = useState(false)
   const [selectedScreenshot, setSelectedScreenshot] = useState<File | null>(null)
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
   const [activeIndex, setActiveIndex] = useState(0);
+  const stepDelayMs = 2000;
   const analysisSteps = [
     {
       icon: faImage,
@@ -106,14 +108,6 @@ function WordscapesPage() {
     }
   }, [analysisDialogVisible])
 
-  useEffect(() => {
-    if (!analysisDialogVisible || !suggestionsComplete) return
-    const timeout = window.setTimeout(() => {
-      setAnalysisDialogVisible(false)
-    }, 2000)
-    return () => window.clearTimeout(timeout)
-  }, [analysisDialogVisible, suggestionsComplete])
-
   const screenshotPreviewUrl = useMemo(() => {
     if (!selectedScreenshot) return null
     return URL.createObjectURL(selectedScreenshot)
@@ -154,8 +148,13 @@ function WordscapesPage() {
     if (!file) return
     setSelectedFile(file)
     setAnalysisDialogVisible(true)
+    setActiveIndex(0)
     setAnalysisComplete(false)
     setSuggestionsComplete(false)
+
+    const advanceAfterDelay = () => new Promise<void>((resolve) => {
+      window.setTimeout(resolve, stepDelayMs)
+    })
 
     const uploadFile = await compressImageIfNeeded(file, {
       thresholdBytes: 2 * 1024 * 1024,
@@ -187,14 +186,21 @@ function WordscapesPage() {
     console.log('[WordVinder] Image payload:', imagePayload)
 
     try {
+      await advanceAfterDelay()
+      setActiveIndex(1)
+
       const result = await analyzeBoard(uploadFile)
       console.log('[WordVinder] Board analysis response:', result)
       if (result.ok) {
         setAnalysisComplete(true)
+        await advanceAfterDelay()
+        setActiveIndex(2)
         const nextSubmission = mapBoardToSubmission(result.board)
         runSuggestions(nextSubmission, result.board.solvedWords)
         setSuggestionsComplete(true)
         setSelectedScreenshot(file)
+        await advanceAfterDelay()
+        setActiveIndex(3)
       } else {
         setAnalysisDialogVisible(false)
       }
