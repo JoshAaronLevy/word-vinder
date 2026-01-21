@@ -32,6 +32,10 @@ function WordscapesPage() {
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
   const [analysisAttempts, setAnalysisAttempts] = useState(0)
   const [lastSubmissionSource, setLastSubmissionSource] = useState<'upload' | 'manual' | null>(null)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false
+    return window.matchMedia('(max-width: 640px)').matches
+  })
   const [activeIndex, setActiveIndex] = useState(0);
   const stepCount = 4;
   const maxAnalysisAttempts = 3
@@ -61,7 +65,7 @@ function WordscapesPage() {
     }
   ];
 
-  const itemRenderer = (item: any, itemIndex: any) => {
+  const getStepVisuals = (item: any, itemIndex: number) => {
     const isActiveItem = activeIndex === itemIndex;
     const isCompleted = completedSteps[itemIndex];
     const backgroundColor = isCompleted
@@ -75,6 +79,12 @@ function WordscapesPage() {
         ? 'var(--surface-b)'
         : 'var(--text-color-secondary)';
     const icon = isCompleted ? faCheck : item.icon;
+
+    return { backgroundColor, textColor, icon };
+  };
+
+  const itemRenderer = (item: any, itemIndex: any) => {
+    const { backgroundColor, textColor, icon } = getStepVisuals(item, itemIndex);
 
     return (
       <span
@@ -110,6 +120,19 @@ function WordscapesPage() {
     return () => {
       isMounted = false
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mediaQuery = window.matchMedia('(max-width: 640px)')
+    const handleChange = () => setIsMobile(mediaQuery.matches)
+    handleChange()
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+    mediaQuery.addListener(handleChange)
+    return () => mediaQuery.removeListener(handleChange)
   }, [])
 
   useEffect(() => {
@@ -291,6 +314,8 @@ function WordscapesPage() {
   const hasReachedRetryLimit = analysisAttempts >= maxAnalysisAttempts
   const showRetryControls = lastSubmissionSource === 'upload' && !!selectedScreenshot
   const isRetryDisabled = hasReachedRetryLimit || analysisDialogVisible
+  const activeStep = analysisSteps[activeIndex]
+  const activeStepVisuals = activeStep ? getStepVisuals(activeStep, activeIndex) : null
 
   return (
     <section className="page wordscapes-page">
@@ -387,14 +412,39 @@ function WordscapesPage() {
         footer={null}
         onHide={() => setAnalysisDialogVisible(false)}
       >
-        <Steps readOnly={false} model={analysisSteps} activeIndex={activeIndex} />
-        <div className="analysis-steps">
-          {analysisSteps[activeIndex]?.summary && (
-            <h2 key={activeIndex} className="analysis-step-summary" style={{ textAlign: 'center' }}>
-              {analysisSteps[activeIndex].summary}
-            </h2>
-          )}
-        </div>
+        {isMobile ? (
+          <div className="analysis-step-single">
+            <span
+              className="analysis-step-single-icon inline-flex align-items-center justify-content-center align-items-center border-circle border-primary border-1 h-3rem w-3rem z-1"
+              style={{
+                backgroundColor: activeStepVisuals?.backgroundColor,
+                color: activeStepVisuals?.textColor,
+                marginTop: 0,
+              }}
+            >
+              {activeStepVisuals && <FontAwesomeIcon icon={activeStepVisuals.icon} />}
+            </span>
+            <div className="analysis-steps">
+              <div className="analysis-step-label">Step {activeIndex + 1} of {stepCount}</div>
+              {activeStep?.summary && (
+                <h2 key={activeIndex} className="analysis-step-summary" style={{ textAlign: 'center' }}>
+                  {activeStep.summary}
+                </h2>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <Steps readOnly={false} model={analysisSteps} activeIndex={activeIndex} />
+            <div className="analysis-steps">
+              {analysisSteps[activeIndex]?.summary && (
+                <h2 key={activeIndex} className="analysis-step-summary" style={{ textAlign: 'center' }}>
+                  {analysisSteps[activeIndex].summary}
+                </h2>
+              )}
+            </div>
+          </>
+        )}
       </Dialog>
     </section>
   )
