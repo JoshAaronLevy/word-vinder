@@ -25,7 +25,7 @@ export const getApiBaseUrl = () => {
   return DEFAULT_REMOTE_API_BASE_URL
 }
 
-export const pingDifyMarco = async (): Promise<void> => {
+export const pingDifyMarco = async (): Promise<boolean> => {
   const baseUrl = getApiBaseUrl()
   const endpoint = `${baseUrl}/api/v1/dify/ping`
   const controller = new AbortController()
@@ -53,20 +53,22 @@ export const pingDifyMarco = async (): Promise<void> => {
     if (response.ok && payload?.ok) {
       const responseText = payload.response ?? 'OK'
       console.log(`[WordVinder] Dify ping OK: ${responseText} (${endpoint})`)
-      return
+      return true
     }
 
     const statusLabel = `status ${response.status}`
     const errorCode = payload?.error?.code ? ` code ${payload.error.code}` : ''
     const errorMessage = payload?.error?.message ? `: ${payload.error.message}` : ''
     console.warn(`[WordVinder] Dify ping failed (${statusLabel}${errorCode}${errorMessage})`)
+    return false
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       console.warn(`[WordVinder] Dify ping timed out (8s)`)
-      return
+      return false
     }
 
     console.warn('[WordVinder] Dify ping failed (network error)')
+    return false
   } finally {
     window.clearTimeout(timeoutId)
   }

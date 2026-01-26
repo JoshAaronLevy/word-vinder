@@ -4,6 +4,7 @@ import { Card } from 'primereact/card'
 import WordleImage from '../../assets/Wordle.png'
 import QuartilesImage from '../../assets/Quartiles.png'
 import WordscapesImage from '../../assets/Wordscapes.png'
+import ScrabbleImage from '../../assets/Scrabble.png'
 
 const helpers = [
   {
@@ -13,6 +14,14 @@ const helpers = [
     path: '/wordscapes',
     image: WordscapesImage,
     imageAlt: 'Wordscapes solver example letters',
+  },
+  {
+    key: 'scrabble',
+    title: 'Scrabble',
+    description: 'Upload a screenshot to extract your rack + board.',
+    path: '/scrabble',
+    image: ScrabbleImage,
+    imageAlt: 'Scrabble board screenshot preview',
   },
   {
     key: 'wordle',

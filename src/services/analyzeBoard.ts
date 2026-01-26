@@ -18,26 +18,71 @@ export const getApiBaseUrl = () => {
   return DEFAULT_REMOTE_API_BASE_URL
 }
 
-export type UnsolvedSlot = {
+export type MissingByLengthEntry = {
   length: number
-  count: number
+  count: number | null
 }
 
-export type BoardState = {
-  letters: string[]
-  solvedWords: string[]
-  unsolvedSlots: UnsolvedSlot[]
+export type SolvedWordsByLengthEntry = {
+  length: number
+  words: string[]
 }
+
+export type WordListEntry = {
+  length: number
+  slots: Array<string | null>
+}
+
+export type WordscapesBoardState = {
+  schema: 'WORDVINDER_BOARD_EXTRACT_V4'
+  game: 'WORDSCAPES'
+  letters: string[]
+  missingByLength: MissingByLengthEntry[]
+  solvedWordsByLength?: SolvedWordsByLengthEntry[]
+  wordLists?: WordListEntry[]
+  notes?: string[]
+}
+
+export type ScrabbleRackTile = {
+  letter: string | null
+  points: number
+  isBlank: boolean
+}
+
+export type ScrabbleBoard = {
+  size: 15
+  tiles: Array<Array<string | null>>
+}
+
+export type ScrabbleBoardState = {
+  schema: 'WORDVINDER_SCRABBLE_EXTRACT_V1'
+  game: 'SCRABBLE'
+  rack: ScrabbleRackTile[]
+  board: ScrabbleBoard
+  notes?: string[]
+}
+
+export type AnyBoardState = WordscapesBoardState | ScrabbleBoardState
+
+export const isScrabbleBoardState = (
+  value: AnyBoardState
+): value is ScrabbleBoardState =>
+  value?.schema === 'WORDVINDER_SCRABBLE_EXTRACT_V1' && value?.game === 'SCRABBLE'
+
+export const isWordscapesBoardState = (
+  value: AnyBoardState
+): value is WordscapesBoardState =>
+  value?.schema === 'WORDVINDER_BOARD_EXTRACT_V4' && value?.game === 'WORDSCAPES'
 
 export type BoardSummary = {
   letters: string
-  remainingByLength: UnsolvedSlot[]
-  totalRemaining: number
+  remainingByLength: MissingByLengthEntry[]
+  totalRemaining: number | null
 }
 
 export type AnalyzeBoardOk = {
   ok: true
-  board: BoardState
+  board: AnyBoardState
   summary: BoardSummary
   debug?: { modelText?: string }
 }
@@ -65,6 +110,11 @@ export const analyzeBoard = async (file: File): Promise<AnalyzeBoardResponse> =>
   const baseUrl = getApiBaseUrl()
   const endpoint = `${baseUrl}/api/v1/board/parse-screenshot`
 
+  console.log('[WordVinder] analyzeBoard request:', {
+    endpoint,
+    file: { name: file.name, size: file.size, type: file.type },
+  })
+
   const formData = new FormData()
   formData.append('image', file)
 
@@ -88,6 +138,8 @@ export const analyzeBoard = async (file: File): Promise<AnalyzeBoardResponse> =>
     } catch {
       payload = null
     }
+
+    console.log('[WordVinder] analyzeBoard raw response:', payload)
 
     if (!payload) {
       return {

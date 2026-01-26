@@ -1,0 +1,129 @@
+.scrabble-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.scrabble-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scrabble-upload-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scrabble-upload-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.scrabble-upload-meta {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.scrabble-upload-meta-title {
+  font-weight: 600;
+}
+
+.scrabble-upload-meta-size {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.scrabble-confirmed {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scrabble-dialog-body {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scrabble-dialog-center {
+  text-align: center;
+}
+
+.scrabble-review {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scrabble-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.scrabble-rack {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+  gap: 0.5rem;
+  max-width: 420px;
+}
+
+.scrabble-rack-tile {
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 0.4rem;
+  text-align: center;
+  font-weight: 600;
+  background: var(--surface-card);
+}
+
+.scrabble-rack-letter {
+  font-size: 1.1rem;
+}
+
+.scrabble-rack-points {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.scrabble-board-scroll {
+  overflow: auto;
+  padding-bottom: 0.25rem;
+}
+
+.scrabble-board {
+  display: grid;
+  gap: 4px;
+  width: max-content;
+}
+
+.scrabble-board-cell {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-ground);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.scrabble-board-cell--filled {
+  background: var(--surface-card);
+}
+
+@media (max-width: 640px) {
+  .scrabble-board-cell {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+  }
+}

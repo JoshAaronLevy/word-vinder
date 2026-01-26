@@ -4,21 +4,40 @@ import { Dialog } from 'primereact/dialog'
 import { FileUpload } from 'primereact/fileupload'
 import { Accordion, AccordionTab } from 'primereact/accordion'
 import type { AccordionTabChangeEvent } from 'primereact/accordion'
+import { Button } from 'primereact/button'
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
+import { Dropdown } from 'primereact/dropdown'
+import { InputNumber } from 'primereact/inputnumber'
+import { InputText } from 'primereact/inputtext'
+import { Message } from 'primereact/message'
 import ResultsPanel from '../components/ResultsPanel'
 import WordFinderForm from '../components/WordFinderForm'
 import { findMatchingWords } from '../logic/wordSearch'
 import type { WordFinderSubmission, WordGroup } from '../types'
 import { getWordscapesWordsByLength } from '../../../shared/dictionary/englishWords'
 import '../wordscapes.css'
-import { analyzeBoard } from '../../../services/analyzeBoard'
-import { filterSolvedWords, mapBoardToSubmission } from '../logic/boardAdapter'
+import { analyzeBoard, isWordscapesBoardState } from '../../../services/analyzeBoard'
+import type { WordscapesBoardState } from '../../../services/analyzeBoard'
+import {
+  confirmStateToSubmission,
+  filterSolvedWords,
+  getSolvedWordsFromBoard,
+  normalizeConfirmStateFromBoard,
+} from '../logic/boardAdapter'
+import type { ConfirmBoardState } from '../logic/boardAdapter'
 import { compressImageIfNeeded } from '../../../shared/utils/imageCompression'
 import { Image } from 'primereact/image'
 import { Steps } from 'primereact/steps'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faDice, faImage, faMagnifyingGlass, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { toAlphaUpper } from '../../../shared/utils/string'
+import { useAppContext } from '../../../app/AppContext'
+
+const wordLengthChoices = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const letterCountRange = { min: 5, max: 8 }
 
 function WordscapesPage() {
+  const { difyPingStatus } = useAppContext()
   const [submission, setSubmission] = useState<WordFinderSubmission | null>(null)
   const [results, setResults] = useState<WordGroup[]>([])
   const [wordsByLength, setWordsByLength] = useState<Record<number, string[]> | null>(null)
@@ -32,16 +51,19 @@ function WordscapesPage() {
   const [formAccordionIndex, setFormAccordionIndex] = useState<number | null>(null)
   const [analysisAttempts, setAnalysisAttempts] = useState(0)
   const [lastSubmissionSource, setLastSubmissionSource] = useState<'upload' | 'manual' | null>(null)
+  const [extractedBoard, setExtractedBoard] = useState<WordscapesBoardState | null>(null)
+  const [confirmState, setConfirmState] = useState<ConfirmBoardState | null>(null)
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return false
     return window.matchMedia('(max-width: 640px)').matches
   })
   const [activeIndex, setActiveIndex] = useState(0);
-  const stepCount = 4;
+  const stepCount = 5;
   const maxAnalysisAttempts = 3
   const [completedSteps, setCompletedSteps] = useState<boolean[]>(
     Array(stepCount).fill(false)
   );
+  const confirmStepIndex = 2
   const analysisSteps = [
     {
       icon: faImage,
@@ -56,11 +78,16 @@ function WordscapesPage() {
     {
       icon: faMagnifyingGlass,
       template: (item: any) => itemRenderer(item, 2),
+      summary: 'Confirm Board State'
+    },
+    {
+      icon: faMagnifyingGlass,
+      template: (item: any) => itemRenderer(item, 3),
       summary: 'Identifying Possible Words'
     },
     {
       icon: faDice,
-      template: (item: any) => itemRenderer(item, 3),
+      template: (item: any) => itemRenderer(item, 4),
       summary: 'Complete! Now go finish that level!'
     }
   ];
@@ -140,8 +167,12 @@ function WordscapesPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnalysisComplete(false)
       setSuggestionsComplete(false)
+      if (extractedBoard || confirmState) {
+        setExtractedBoard(null)
+        setConfirmState(null)
+      }
     }
-  }, [analysisDialogVisible])
+  }, [analysisDialogVisible, extractedBoard, confirmState])
 
   useEffect(() => {
     if (analysisDialogVisible) return
@@ -156,6 +187,78 @@ function WordscapesPage() {
     if (!selectedScreenshot) return null
     return URL.createObjectURL(selectedScreenshot)
   }, [selectedScreenshot])
+
+  const isConfirmReady = useMemo(() => {
+    if (!confirmState) return false
+    const letters = confirmState.letters ?? []
+    const lettersInRange =
+      letters.length >= letterCountRange.min && letters.length <= letterCountRange.max
+    const lettersValid = letters.every((letter) => /^[A-Z]$/.test(letter.trim().toUpperCase()))
+    const missing = confirmState.missingByLength ?? []
+    const lengths = missing.map((entry) => entry.length)
+    const lengthsUnique = new Set(lengths).size === lengths.length
+    const lengthsValid = missing.every(
+      (entry) =>
+        Number.isInteger(entry.length) && entry.length >= 3 && entry.length <= 12,
+    )
+    const countsValid = missing.every(
+      (entry) =>
+        entry.count === null ||
+        (Number.isInteger(entry.count) && entry.count >= 0 && entry.count <= 20),
+    )
+    return lettersInRange && lettersValid && lengthsUnique && lengthsValid && countsValid
+  }, [confirmState])
+
+  const handleConfirmLetterChange = (index: number, value: string) => {
+    setConfirmState((prev) => {
+      if (!prev) return prev
+      const nextLetters = [...prev.letters]
+      nextLetters[index] = toAlphaUpper(value)
+      return { ...prev, letters: nextLetters }
+    })
+  }
+
+  const handleMissingLengthChange = (index: number, value: number | null) => {
+    if (value === null) return
+    setConfirmState((prev) => {
+      if (!prev) return prev
+      const nextMissing = prev.missingByLength.map((entry, idx) =>
+        idx === index ? { ...entry, length: value } : entry,
+      )
+      return { ...prev, missingByLength: nextMissing }
+    })
+  }
+
+  const handleMissingCountChange = (index: number, value: number | null) => {
+    setConfirmState((prev) => {
+      if (!prev) return prev
+      const nextMissing = prev.missingByLength.map((entry, idx) =>
+        idx === index ? { ...entry, count: value } : entry,
+      )
+      return { ...prev, missingByLength: nextMissing }
+    })
+  }
+
+  const handleAddMissingLength = () => {
+    setConfirmState((prev) => {
+      if (!prev) return prev
+      const used = new Set(prev.missingByLength.map((entry) => entry.length))
+      const nextLength = wordLengthChoices.find((length) => !used.has(length))
+      if (!nextLength) return prev
+      return {
+        ...prev,
+        missingByLength: [...prev.missingByLength, { length: nextLength, count: null }],
+      }
+    })
+  }
+
+  const handleRemoveMissingLength = (index: number) => {
+    setConfirmState((prev) => {
+      if (!prev) return prev
+      const nextMissing = prev.missingByLength.filter((_, idx) => idx !== index)
+      return { ...prev, missingByLength: nextMissing }
+    })
+  }
 
   useEffect(() => {
     return () => {
@@ -217,12 +320,81 @@ function WordscapesPage() {
     window.setTimeout(resolve, ms)
   })
 
+  const resetAnalysisState = () => {
+    setAnalysisDialogVisible(false)
+    setActiveIndex(0)
+    setCompletedSteps(Array(stepCount).fill(false))
+    setExtractedBoard(null)
+    setConfirmState(null)
+    setAnalysisComplete(false)
+    setSuggestionsComplete(false)
+  }
+
+  const handleCancelConfirm = () => {
+    confirmDialog({
+      header: 'Cancel analysis?',
+      message: 'Your extracted board details will be discarded.',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Yes, cancel',
+      rejectLabel: 'Keep reviewing',
+      accept: resetAnalysisState,
+    })
+  }
+
+  const handleReAnalyze = async () => {
+    if (!selectedScreenshot || hasReachedRetryLimit) return
+    setExtractedBoard(null)
+    setConfirmState(null)
+    setCompletedSteps(Array(stepCount).fill(false))
+    await runImageAnalysis(selectedScreenshot, { resetResults: true })
+  }
+
+  const handleConfirm = async () => {
+    if (!confirmState || !isConfirmReady) return
+    const nextSubmission = confirmStateToSubmission(confirmState)
+    const solvedWords = extractedBoard ? getSolvedWordsFromBoard(extractedBoard) : []
+    const suggestionSummary = runSuggestions(nextSubmission, solvedWords)
+    setSuggestionsComplete(true)
+    setCompletedSteps((prev) => {
+      const next = [...prev]
+      next[confirmStepIndex] = true
+      return next
+    })
+    await delay(1000)
+    setActiveIndex(confirmStepIndex + 1)
+    await delay(1000)
+    setCompletedSteps((prev) => {
+      const next = [...prev]
+      next[confirmStepIndex + 1] = true
+      return next
+    })
+    await delay(1000)
+    setActiveIndex(confirmStepIndex + 2)
+    await delay(100)
+    setCompletedSteps((prev) => {
+      const next = [...prev]
+      next[confirmStepIndex + 2] = true
+      return next
+    })
+    await delay(900)
+    setAnalysisDialogVisible(false)
+    console.log('[WordVinder] Board analysis complete:', {
+      ...suggestionSummary,
+      extractedBoard: extractedBoard ?? undefined,
+      missingByLength: extractedBoard?.missingByLength,
+      imageName: selectedScreenshot?.name,
+      source: 'upload',
+    })
+  }
+
   const runImageAnalysis = async (file: File, options?: { resetResults?: boolean }) => {
     setSelectedFile(file)
     setAnalysisDialogVisible(true)
     setActiveIndex(0)
     setAnalysisComplete(false)
     setSuggestionsComplete(false)
+    setExtractedBoard(null)
+    setConfirmState(null)
     if (options?.resetResults) {
       setSubmission(null)
       setResults([])
@@ -256,35 +428,17 @@ function WordscapesPage() {
         })
         await delay(1000)
         setActiveIndex(2)
-        const nextSubmission = mapBoardToSubmission(result.board)
-        setLastSubmissionSource('upload')
-        const suggestionSummary = runSuggestions(nextSubmission, result.board.solvedWords)
-        setSuggestionsComplete(true)
-        setSelectedScreenshot(file)
-        await delay(1000)
-        setCompletedSteps((prev) => {
-          const next = [...prev]
-          next[2] = true
-          return next
-        })
-        await delay(1000)
-        setActiveIndex(3)
-        await delay(100)
-        setCompletedSteps((prev) => {
-          const next = [...prev]
-          next[3] = true
-          return next
-        })
-        await delay(900)
-        setAnalysisDialogVisible(false)
-        incrementAnalysisAttempts()
-        console.log('[WordVinder] Board analysis complete:', {
-          ...suggestionSummary,
-          boardSummary: result.summary,
-          unsolvedSlots: result.board.unsolvedSlots,
-          imageName: file.name,
-          source: 'upload',
-        })
+        if (isWordscapesBoardState(result.board)) {
+          setExtractedBoard(result.board)
+          setConfirmState(normalizeConfirmStateFromBoard(result.board))
+          setSelectedScreenshot(file)
+          setLastSubmissionSource('upload')
+          incrementAnalysisAttempts()
+        } else {
+          console.warn('[WordVinder] Wordscapes analysis returned non-wordscapes board:', result.board)
+          setAnalysisDialogVisible(false)
+          incrementAnalysisAttempts()
+        }
       } else {
         setAnalysisDialogVisible(false)
         incrementAnalysisAttempts()
@@ -312,13 +466,20 @@ function WordscapesPage() {
   }
 
   const hasReachedRetryLimit = analysisAttempts >= maxAnalysisAttempts
+  const isUploadEnabled = difyPingStatus === 'ok'
   const showRetryControls = lastSubmissionSource === 'upload' && !!selectedScreenshot
   const isRetryDisabled = hasReachedRetryLimit || analysisDialogVisible
   const activeStep = analysisSteps[activeIndex]
   const activeStepVisuals = activeStep ? getStepVisuals(activeStep, activeIndex) : null
+  const canAddMissingLength = useMemo(() => {
+    if (!confirmState) return false
+    const used = new Set(confirmState.missingByLength.map((entry) => entry.length))
+    return wordLengthChoices.some((length) => !used.has(length))
+  }, [confirmState])
 
   return (
     <section className="page wordscapes-page">
+      <ConfirmDialog />
       <div className="page-header">
         <div>
           <p className="eyebrow">Wordscapes Vinder (Finder)</p>
@@ -346,6 +507,7 @@ function WordscapesPage() {
                     </span>
                   ),
                 }}
+                disabled={!isUploadEnabled}
                 auto
                 multiple={false}
                 onSelect={() => setAnalysisAttempts(0)}
@@ -444,6 +606,141 @@ function WordscapesPage() {
               )}
             </div>
           </>
+        )}
+        {activeIndex === confirmStepIndex && (
+          <div className="analysis-confirm-panel">
+            <div className="analysis-confirm-preview">
+              {selectedScreenshot && screenshotPreviewUrl && (
+                <Image
+                  src={screenshotPreviewUrl}
+                  alt={selectedScreenshot.name}
+                  width="140"
+                  preview
+                  imageStyle={{
+                    borderRadius: '10px',
+                    border: '1px solid var(--surface-border)',
+                    objectFit: 'cover',
+                  }}
+                />
+              )}
+            </div>
+            {confirmState ? (
+              <div className="analysis-confirm-form">
+                <div className="analysis-confirm-section">
+                  <div className="analysis-confirm-label">Letters</div>
+                  <div className="analysis-confirm-letters">
+                    {confirmState.letters.map((letter, index) => (
+                      <InputText
+                        key={`confirm-letter-${index}`}
+                        inputMode="text"
+                        maxLength={1}
+                        value={letter}
+                        onChange={(event) => handleConfirmLetterChange(index, event.target.value)}
+                        aria-label={`Letter ${index + 1}`}
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="focus-ring-target"
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="analysis-confirm-section">
+                  <div className="analysis-confirm-missing-header">
+                    <div className="analysis-confirm-label">Missing words by length</div>
+                    <Button
+                      type="button"
+                      label="Add length"
+                      size="small"
+                      onClick={handleAddMissingLength}
+                      disabled={!canAddMissingLength}
+                      aria-disabled={!canAddMissingLength}
+                      className="interactive-pressable"
+                    />
+                  </div>
+                  <div className="analysis-confirm-missing-list">
+                    {confirmState.missingByLength.map((entry, index) => {
+                      const usedLengths = new Set(
+                        confirmState.missingByLength
+                          .filter((_, rowIndex) => rowIndex !== index)
+                          .map((row) => row.length),
+                      )
+                      const lengthOptions = wordLengthChoices.map((length) => ({
+                        label: `${length}`,
+                        value: length,
+                        disabled: usedLengths.has(length),
+                      }))
+                      return (
+                        <div key={`missing-row-${index}`} className="analysis-confirm-row">
+                          <Dropdown
+                            value={entry.length}
+                            options={lengthOptions}
+                            optionDisabled="disabled"
+                            onChange={(event) => handleMissingLengthChange(index, event.value)}
+                            placeholder="Length"
+                            aria-label={`Missing word length ${index + 1}`}
+                            className="focus-ring-target"
+                          />
+                          <InputNumber
+                            value={entry.count ?? null}
+                            min={0}
+                            max={20}
+                            placeholder="Count"
+                            onValueChange={(event) => handleMissingCountChange(index, event.value ?? null)}
+                            inputClassName="focus-ring-target"
+                          />
+                          <Button
+                            type="button"
+                            icon="pi pi-times"
+                            severity="secondary"
+                            text
+                            onClick={() => handleRemoveMissingLength(index)}
+                            aria-label={`Remove length ${entry.length}`}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                {!isConfirmReady && (
+                  <Message
+                    severity="warn"
+                    text={`Enter ${letterCountRange.min}–${letterCountRange.max} letters (A–Z) and valid missing counts before confirming.`}
+                  />
+                )}
+              </div>
+            ) : (
+              <Message severity="warn" text="Board data is not ready yet." />
+            )}
+          </div>
+        )}
+        {activeIndex === confirmStepIndex && (
+          <div className="analysis-confirm-footer">
+            <Button
+              type="button"
+              label="Cancel"
+              severity="secondary"
+              outlined
+              onClick={handleCancelConfirm}
+              className="interactive-pressable"
+            />
+            <Button
+              type="button"
+              label="Re-Analyze"
+              severity="secondary"
+              onClick={handleReAnalyze}
+              disabled={!selectedScreenshot || hasReachedRetryLimit}
+              aria-disabled={!selectedScreenshot || hasReachedRetryLimit}
+              className="interactive-pressable"
+            />
+            <Button
+              type="button"
+              label="Confirm"
+              onClick={handleConfirm}
+              disabled={!isConfirmReady}
+              aria-disabled={!isConfirmReady}
+              className="interactive-pressable"
+            />
+          </div>
         )}
       </Dialog>
     </section>

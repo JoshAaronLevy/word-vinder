@@ -1,11 +1,16 @@
-import type { BoardState } from '../../../services/analyzeBoard'
+import type { WordscapesBoardState } from '../../../services/analyzeBoard'
 import type { WordFinderSubmission, WordGroup } from '../types'
 
 const normalizeToken = (value: string) => value.trim().toUpperCase()
 
-const buildTargetLengths = (slots: BoardState['unsolvedSlots']) => {
-  const lengths = slots
-    .filter((slot) => Number.isFinite(slot.length) && slot.length > 0 && slot.count > 0)
+export type ConfirmBoardState = {
+  letters: string[]
+  missingByLength: Array<{ length: number; count: number | null }>
+}
+
+export const getTargetWordLengths = (missingByLength: WordscapesBoardState['missingByLength']) => {
+  const lengths = missingByLength
+    .filter((slot) => Number.isFinite(slot.length) && slot.length > 0 && typeof slot.count === 'number' && slot.count > 0)
     .map((slot) => slot.length)
 
   const unique = Array.from(new Set(lengths))
@@ -13,9 +18,42 @@ const buildTargetLengths = (slots: BoardState['unsolvedSlots']) => {
   return unique
 }
 
-export const mapBoardToSubmission = (board: BoardState): WordFinderSubmission => {
+export const flattenSolvedWordsByLength = (entries?: WordscapesBoardState['solvedWordsByLength']) => {
+  if (!Array.isArray(entries)) return []
+  const words: string[] = []
+  for (const entry of entries) {
+    if (!entry || !Array.isArray(entry.words)) continue
+    for (const word of entry.words) {
+      if (typeof word === 'string' && word.trim()) {
+        words.push(word)
+      }
+    }
+  }
+  return words
+}
+
+export const getSolvedWordsFromBoard = (board: WordscapesBoardState) =>
+  flattenSolvedWordsByLength(board.solvedWordsByLength)
+
+export const mapBoardToSubmission = (board: WordscapesBoardState): WordFinderSubmission => {
   const letters = board.letters.map(normalizeToken).filter(Boolean)
-  const wordLengths = buildTargetLengths(board.unsolvedSlots ?? [])
+  const wordLengths = getTargetWordLengths(board.missingByLength ?? [])
+
+  return {
+    letters,
+    letterCount: letters.length,
+    wordLengths: wordLengths.length ? wordLengths : undefined,
+  }
+}
+
+export const normalizeConfirmStateFromBoard = (board: WordscapesBoardState): ConfirmBoardState => ({
+  letters: [...board.letters],
+  missingByLength: board.missingByLength.map((entry) => ({ ...entry })),
+})
+
+export const confirmStateToSubmission = (state: ConfirmBoardState): WordFinderSubmission => {
+  const letters = state.letters.map(normalizeToken).filter(Boolean)
+  const wordLengths = getTargetWordLengths(state.missingByLength ?? [])
 
   return {
     letters,
