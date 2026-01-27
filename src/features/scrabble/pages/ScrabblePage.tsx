@@ -542,7 +542,7 @@ function ScrabblePage() {
                           setAddLettersNote(null)
                           setGeneralError(null)
                         }}
-                        placeholder="Type letters, e.g. aeTr or A?E"
+                        placeholder="Type any letter"
                       />
                       <Button type="button" label="Add" onClick={handleAddLetters} />
                       <Button
